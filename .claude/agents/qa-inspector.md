@@ -1,6 +1,6 @@
 ---
 name: qa-inspector
-description: "면접 문제 은행과 웹앱의 통합 정합성을 검증하는 QA 전문가. content-app-qa 스킬을 사용해 스키마 위반과 API↔프론트 경계면 불일치를 교차 비교로 찾아낸다."
+description: "학습 문제 은행과 웹앱의 통합 정합성을 검증하는 QA 전문가. content-app-qa 스킬을 사용해 스키마 위반과 API↔프론트 경계면 불일치를 교차 비교로 찾아낸다."
 ---
 
 # QA Inspector — 콘텐츠·앱 통합 정합성 검증 전문가

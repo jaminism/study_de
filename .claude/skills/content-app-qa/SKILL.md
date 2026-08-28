@@ -1,6 +1,6 @@
 ---
 name: content-app-qa
-description: "면접 문제 은행(data/questions/*.json)과 웹앱(app/)의 통합 정합성을 검증한다. 스키마 위반, ID 중복, answer_index 범위 오류, API↔프론트 경계면 불일치를 교차 비교로 찾아낸다. '문제 은행 검증', 'QA 해줘', '앱 점검' 요청 시 반드시 이 스킬을 사용할 것."
+description: "학습 문제 은행(data/questions/*.json)과 웹앱(app/)의 통합 정합성을 검증한다. 스키마 위반, ID 중복, answer_index 범위 오류, API↔프론트 경계면 불일치를 교차 비교로 찾아낸다. '문제 은행 검증', 'QA 해줘', '앱 점검' 요청 시 반드시 이 스킬을 사용할 것."
 ---
 
 # 콘텐츠·앱 통합 QA 스킬

@@ -1,14 +1,14 @@
 ---
 name: interview-question-research
-description: "데이터 엔지니어링 기술 카테고리(Kafka, Spark, Hadoop, HDFS, Hive, Trino, Iceberg, SQL, ClickHouse, ElasticSearch, Kibana, Scala, Python, Java, Git, Ranger, YARN, K8S, REST API 등)의 면접 문제를 R&D 기반으로 조사하고, 객관식/주관식 문제와 정답·해설을 표준 스키마로 생성한다. '면접 문제 만들어줘', '{기술} 문제 추가해줘', '문제 은행 갱신' 요청 시 반드시 이 스킬을 사용할 것."
+description: "데이터 엔지니어링 기술 카테고리(Kafka, Spark, Hadoop, HDFS, Hive, Trino, Iceberg, SQL, ClickHouse, ElasticSearch, Kibana, Scala, Python, Java, Git, Ranger, YARN, K8S, REST API 등)의 학습 문제를 R&D 기반으로 조사하고, 객관식/주관식 문제와 정답·해설을 표준 스키마로 생성한다. '학습 문제 만들어줘', '{기술} 문제 추가해줘', '문제 은행 갱신' 요청 시 반드시 이 스킬을 사용할 것."
 ---
 
-# 면접 문제 R&D 스킬
+# 학습 문제 R&D 스킬
 
-데이터 엔지니어 면접 대비 프로그램을 위해, 기술 카테고리별 면접 문제를 조사·생성하는 절차와 출력 스키마를 정의한다.
+데이터 엔지니어 학습 프로그램을 위해, 기술 카테고리별 학습 문제를 조사·생성하는 절차와 출력 스키마를 정의한다.
 
 ## 왜 R&D가 필요한가
-암기된 지식만으로 문제를 만들면 뻔한 정의 문제에 그친다. 실제 면접에서 나오는 문제는 공식 문서의 설계 의도, 트러블슈팅 블로그의 실전 함정, 버전 변경 이력에서 나온다. WebSearch/WebFetch로 최신 정보를 조사한 뒤 문제를 구성해야 현업 면접의 실제 난이도를 재현할 수 있다.
+암기된 지식만으로 문제를 만들면 뻔한 정의 문제에 그친다. 실전에서 나오는 문제는 공식 문서의 설계 의도, 트러블슈팅 블로그의 실전 함정, 버전 변경 이력에서 나온다. WebSearch/WebFetch로 최신 정보를 조사한 뒤 문제를 구성해야 현업 실무의 실제 난이도를 재현할 수 있다.
 
 ## 조사 절차
 

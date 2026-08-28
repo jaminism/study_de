@@ -1,6 +1,6 @@
-# study_de — 데이터 엔지니어 면접 문제 프로그램
+# study_de — 데이터 엔지니어 학습 문제 프로그램
 
-데이터 엔지니어링 기술 스택 면접 문제를 카테고리별로 R&D 기반으로 생성하고, 웹에서 직접 풀어볼 수 있는 Flask 앱입니다.
+데이터 엔지니어링 기술 스택 학습 문제를 카테고리별로 R&D 기반으로 생성하고, 웹에서 직접 풀어볼 수 있는 Flask 앱입니다.
 
 Kafka, Kafka Streams, Spark, Spark Streaming, Hadoop, HDFS, Hive, Trino, Iceberg, SQL, ClickHouse, Elasticsearch, Kibana, Scala, Python, Java, Git, Ranger, YARN, K8S, REST API — 총 **21개 카테고리, 500문항 이상**.
 

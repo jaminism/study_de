@@ -457,7 +457,7 @@
     "question": "KStream, KTable, GlobalKTable의 차이를 설명하고, 각각을 선택해야 하는 상황을 예를 들어 서술하라.",
     "model_answer": "KStream은 레코드 하나하나를 독립 이벤트로 보는 append-only 스트림이다(클릭 로그, 주문 이벤트). KTable은 키별 최신 값을 유지하는 changelog 해석으로, 같은 키가 오면 upsert되고 null value는 tombstone으로 삭제를 의미한다(회원 상태, 잔액). 둘 다 파티션 단위로 분할되어 각 인스턴스가 담당 파티션만 갖기 때문에 조인 시 co-partitioning(같은 키, 같은 파티션 수, 같은 파티셔너)이 필요하다. GlobalKTable은 소스 토픽의 모든 파티션을 모든 인스턴스에 전량 복제하므로 co-partitioning이 필요 없고 스트림의 값에서 뽑은 임의 키로 조회할 수 있어, 상품/코드 마스터처럼 작고 갱신이 드문 참조 데이터에 적합하다. 대신 인스턴스마다 전체 데이터를 메모리·디스크에 갖고, 스트림과 시간 동기화가 되지 않아 재처리 결정성이 떨어진다.",
     "keywords": ["KStream", "KTable", "GlobalKTable", "co-partitioning", "tombstone"],
-    "explanation": "세 타입의 차이는 '이벤트 vs 상태'라는 의미 차원과 '파티션 분할 vs 전량 복제'라는 물리 차원 두 축으로 정리하면 명확하다. 면접에서는 특히 GlobalKTable의 대가(전량 복제 비용, 시간 동기화 없음)를 말할 수 있는지를 본다."
+    "explanation": "세 타입의 차이는 '이벤트 vs 상태'라는 의미 차원과 '파티션 분할 vs 전량 복제'라는 물리 차원 두 축으로 정리하면 명확하다. 학습할 때는 특히 GlobalKTable의 대가(전량 복제 비용, 시간 동기화 없음)를 말할 수 있는지를 본다."
   },
   {
     "id": "kafka-streams-sub-002",

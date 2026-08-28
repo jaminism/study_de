@@ -4,7 +4,7 @@
 
 - **하네스 구성**: 에이전트 8개, 스킬 4개, CLAUDE.md 포인터 등록
 - **문제 은행**: 21개 카테고리 전체, 총 420문항 (`data/questions/*.json`)
-  - 최초 R&D 생성(347문항) + `docs/reference_01.txt`(사용자의 예전 Gemini 면접 준비 대화 로그) 참고 보강(+73문항, hive/sql/clickhouse/kafka/kafka-streams/spark/spark-streaming/elasticsearch/scala/python)
+  - 최초 R&D 생성(347문항) + `docs/reference_01.txt`(사용자의 예전 Gemini 학습 준비 대화 로그) 참고 보강(+73문항, hive/sql/clickhouse/kafka/kafka-streams/spark/spark-streaming/elasticsearch/scala/python)
   - 보강 시 기술 간 "연결 질문"(예: Hive Tez vs Spark 엔진, Kafka Streams vs Spark Structured Streaming, ES vs ClickHouse)은 가장 관련 깊은 단일 카테고리에 편입, category 필드는 단일값 유지
 - **Flask 웹앱** (`app/`): main.py, data_loader.py, templates/, static/, requirements.txt — `python app/main.py`로 실행
 - **QA 검증**: 통과 19 / 실패 0(수정 완료) / 경고 6 (`_workspace/qa_report.md`)

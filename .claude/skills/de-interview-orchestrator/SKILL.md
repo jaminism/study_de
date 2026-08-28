@@ -1,11 +1,11 @@
 ---
 name: de-interview-orchestrator
-description: "데이터 엔지니어 면접 문제 프로그램(Kafka, Spark, Hadoop, HDFS, Hive, Trino, Iceberg, SQL, ClickHouse, ElasticSearch, Kibana, Scala, Python, Java, Git, Ranger, YARN, K8S, REST API 등) 전체를 조율하는 오케스트레이터. 문제 은행 생성/갱신, 웹앱 빌드, QA 검증을 처리한다. '면접 문제 프로그램 만들어줘', '데이터 엔지니어 면접 하네스 실행', '{기술} 문제 추가/갱신', '문제 은행 다시 생성', '앱 다시 빌드', '결과 개선', 'QA 다시 해줘' 등 초기/후속 요청 모두에 반드시 이 스킬을 사용할 것."
+description: "데이터 엔지니어 학습 문제 프로그램(Kafka, Spark, Hadoop, HDFS, Hive, Trino, Iceberg, SQL, ClickHouse, ElasticSearch, Kibana, Scala, Python, Java, Git, Ranger, YARN, K8S, REST API 등) 전체를 조율하는 오케스트레이터. 문제 은행 생성/갱신, 웹앱 빌드, QA 검증을 처리한다. '학습 문제 프로그램 만들어줘', '데이터 엔지니어 학습 하네스 실행', '{기술} 문제 추가/갱신', '문제 은행 다시 생성', '앱 다시 빌드', '결과 개선', 'QA 다시 해줘' 등 초기/후속 요청 모두에 반드시 이 스킬을 사용할 것."
 ---
 
-# 데이터 엔지니어 면접 문제 프로그램 오케스트레이터
+# 데이터 엔지니어 학습 문제 프로그램 오케스트레이터
 
-데이터 엔지니어링 면접 문제를 R&D로 생성하고, 이를 풀어볼 수 있는 Python 웹앱을 빌드·검증하는 전체 흐름을 조율하는 통합 스킬.
+데이터 엔지니어링 학습 문제를 R&D로 생성하고, 이를 풀어볼 수 있는 Python 웹앱을 빌드·검증하는 전체 흐름을 조율하는 통합 스킬.
 
 ## 실행 모드: 하이브리드
 
@@ -151,7 +151,7 @@ Agent(
 ## 테스트 시나리오
 
 ### 정상 흐름
-1. 사용자가 "데이터 엔지니어 면접 문제 프로그램 만들어줘" 요청
+1. 사용자가 "데이터 엔지니어 학습 문제 프로그램 만들어줘" 요청
 2. Phase 1에서 `request/main_req.md`의 21개 기술 확인
 3. Phase 2~3에서 6명 팀 구성, 21개 파일 생성 (팀원 간 경계 조율 SendMessage 발생)
 4. Phase 4에서 팀 정리
