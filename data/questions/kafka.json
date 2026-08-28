@@ -1,0 +1,790 @@
+[
+  {
+    "id": "kafka-mcq-001",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kafka의 메시지 순서 보장에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "파티션이 1개인 토픽은 같은 컨슈머 그룹에 컨슈머를 여러 개 붙여도 순서를 유지하면서 병렬 처리할 수 있다",
+      "순서는 하나의 파티션 내부에서만 보장되며, 토픽 전체에 대한 전역 순서는 보장되지 않는다",
+      "같은 키로 생산된 메시지는 기본 파티셔너에서 같은 파티션으로 가므로 키 단위 순서가 보장된다",
+      "컨슈머 그룹 내 서로 다른 컨슈머가 서로 다른 파티션을 읽으므로 파티션 간 처리 순서는 어긋날 수 있다"
+    ],
+    "answer_index": 0,
+    "explanation": "파티션이 1개면 같은 컨슈머 그룹 안에서 그 파티션은 단 하나의 컨슈머에게만 할당되므로, 컨슈머를 여러 개 띄워도 나머지는 유휴 상태가 되고 병렬 처리가 되지 않는다. 전역 순서를 원하면 파티션 1개로 두되 병렬성을 포기해야 하며, 이것이 순서와 처리량의 근본적 트레이드오프다. 나머지 세 설명은 모두 정확하다."
+  },
+  {
+    "id": "kafka-mcq-002",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "파티션이 4개인 토픽을 하나의 컨슈머 그룹에서 소비할 때에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "컨슈머 인스턴스를 6개 띄우면 2개는 파티션을 할당받지 못하고 유휴 상태가 된다",
+      "컨슈머를 6개로 늘리면 브로커가 파티션을 6개로 자동 확장해 균등하게 분배한다",
+      "하나의 파티션은 같은 그룹 안에서 최대 한 컨슈머에게만 할당된다",
+      "서로 다른 컨슈머 그룹은 같은 파티션을 각각 독립적으로 소비할 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "파티션 수는 컨슈머 수에 따라 자동으로 늘어나지 않는다. 파티션 증설은 관리자가 kafka-topics.sh --alter 등으로 명시적으로 수행해야 하는 작업이며, 그룹 내 컨슈머 수가 파티션 수를 초과하면 초과분은 유휴 상태로 남는다. 나머지 세 설명은 컨슈머 그룹의 기본 할당 규칙을 정확히 서술한 것이다."
+  },
+  {
+    "id": "kafka-mcq-003",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "컨슈머 오프셋 관리에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "커밋된 오프셋은 내부 토픽 __consumer_offsets에 (그룹, 토픽, 파티션) 키로 저장된다",
+      "__consumer_offsets는 cleanup.policy=compact로 운영되어 키별 최신 오프셋만 남는다",
+      "커밋되는 값은 마지막으로 처리한 레코드의 오프셋 그 자체이며, 재시작하면 그 레코드부터 다시 읽는다",
+      "enable.auto.commit=true이면 auto.commit.interval.ms 주기를 넘긴 뒤의 poll 호출 시점에 커밋이 일어난다"
+    ],
+    "answer_index": 2,
+    "explanation": "커밋되는 오프셋은 마지막으로 처리한 레코드의 오프셋 + 1, 즉 다음에 읽을 위치다. 그래서 재시작하면 마지막 처리 레코드가 아니라 그 다음 레코드부터 읽는다. 이 오프 바이 원을 오해하면 수동 커밋 코드에서 항상 한 건을 중복 처리하게 된다. 나머지 세 설명은 정확하다."
+  },
+  {
+    "id": "kafka-mcq-004",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kafka 파티션 리플리케이션에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "프로듀서의 쓰기와 컨슈머의 읽기는 기본적으로 파티션 리더 복제본이 처리한다",
+      "팔로워는 리더에게 fetch 요청을 보내 데이터를 가져가는 pull 방식으로 복제한다",
+      "replication.factor는 파티션별 복제본 총 개수이며 리더도 그 개수에 포함된다",
+      "replication.factor는 클러스터의 브로커 수보다 크게 지정할 수 있고, 부족한 복제본은 이후 브로커가 추가되면 자동으로 배치된다"
+    ],
+    "answer_index": 3,
+    "explanation": "replication.factor는 브로커 수를 초과할 수 없다. 같은 파티션의 복제본은 서로 다른 브로커에 놓여야 의미가 있으므로, 브로커 수보다 큰 값으로 토픽을 만들면 InvalidReplicationFactorException으로 실패한다. 브로커를 추가한 뒤 복제본을 늘리려면 kafka-reassign-partitions.sh로 명시적으로 재배치해야 한다. 나머지 세 설명은 정확하다."
+  },
+  {
+    "id": "kafka-mcq-005",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "프로듀서의 acks 설정에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "acks=all은 replication.factor에 지정된 모든 복제본이 기록을 완료해야 응답하므로, 복제본 하나만 장애가 나도 쓰기가 실패한다",
+      "acks=0은 브로커 응답을 기다리지 않아 지연은 가장 낮지만 유실 가능성이 가장 크다",
+      "acks=1은 리더가 자신의 로그에 기록한 뒤 응답하므로, 복제 전에 리더가 죽으면 유실될 수 있다",
+      "acks=all은 현재 ISR에 속한 모든 복제본이 기록을 확인한 뒤에 응답한다"
+    ],
+    "answer_index": 0,
+    "explanation": "acks=all의 기준은 replication.factor가 아니라 현재 ISR이다. replication.factor=3이라도 ISR이 2로 줄면 그 2개만 확인하고 응답한다. 쓰기가 거부되는 것은 ISR 크기가 min.insync.replicas 미만으로 떨어질 때이며, 이 값을 설정하지 않으면 ISR이 1이어도 쓰기가 성공해 무손실 보장이 깨진다. 그래서 acks=all은 min.insync.replicas와 반드시 함께 설계해야 한다."
+  },
+  {
+    "id": "kafka-mcq-006",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "토픽 리텐션과 로그 삭제에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "cleanup.policy=delete가 기본값이며 retention.ms(기본 7일)나 retention.bytes 조건 중 하나라도 충족하면 삭제 대상이 된다",
+      "리텐션 기간이 지난 메시지라도 아직 커밋하지 않은 컨슈머 그룹이 있으면 삭제되지 않고 보존된다",
+      "삭제는 개별 메시지 단위가 아니라 로그 세그먼트 파일 단위로 이루어진다",
+      "현재 쓰기가 진행 중인 액티브 세그먼트는 삭제 대상이 아니며, 롤링된 뒤에야 삭제될 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "Kafka의 리텐션은 컨슈머의 소비 진행도와 완전히 무관하다. 브로커는 컨슈머가 어디까지 읽었는지 고려하지 않고 리텐션 조건만으로 세그먼트를 삭제하므로, 컨슈머가 오래 멈춰 있으면 아직 읽지 않은 데이터가 사라지고 재시작 시 OffsetOutOfRangeException 또는 auto.offset.reset 동작이 일어난다. 이 점이 전통적 메시지 큐와 크게 다르다."
+  },
+  {
+    "id": "kafka-mcq-007",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Apache Kafka 4.0의 KRaft 모드에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "Kafka 4.0은 ZooKeeper 모드를 완전히 제거하고 KRaft 모드만 지원한다",
+      "클러스터 메타데이터는 __cluster_metadata 내부 로그에 이벤트 형태로 기록되고 Raft로 복제된다",
+      "KRaft 모드에서는 컨트롤러가 항상 브로커 역할을 겸해야 하므로 전용 컨트롤러 노드를 따로 둘 수 없다",
+      "컨트롤러 쿼럼은 보통 3 또는 5개의 홀수 노드로 구성하며 과반이 살아 있어야 메타데이터 쓰기가 가능하다"
+    ],
+    "answer_index": 2,
+    "explanation": "process.roles에 broker,controller를 함께 지정하는 combined 모드는 선택 사항이며, 운영 환경에서는 오히려 process.roles=controller인 전용 컨트롤러 노드를 별도로 두는 구성이 권장된다. combined 모드는 개발이나 소규모 환경용으로, 브로커 부하가 컨트롤러 쿼럼의 안정성에 직접 영향을 주는 위험이 있다. 나머지 세 설명은 4.0의 KRaft 구조를 정확히 서술한 것이다."
+  },
+  {
+    "id": "kafka-mcq-008",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "컨슈머의 auto.offset.reset 설정에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "커밋된 오프셋이 없는 새 그룹이거나, 커밋된 오프셋이 리텐션으로 사라져 유효 범위를 벗어난 경우에 적용된다",
+      "기본값은 latest이며 그룹이 처음 붙으면 그 이후에 들어오는 메시지부터 읽는다",
+      "earliest로 두면 토픽에 남아 있는 가장 오래된 오프셋부터 다시 읽는다",
+      "none으로 두면 커밋된 오프셋이 없을 때 안전하게 earliest로 폴백한다"
+    ],
+    "answer_index": 3,
+    "explanation": "auto.offset.reset=none은 폴백하지 않고 NoOffsetForPartitionException을 던진다. 오프셋 위치를 애플리케이션이 명시적으로 결정해야 하는 경우(예: 외부 저장소에서 오프셋을 관리하고 seek로 지정하는 설계)에 쓰는 값이다. 참고로 커밋 오프셋이 리텐션으로 무효화되어 reset이 일어나면 대량 재처리나 대량 스킵이 발생하므로 운영에서 주의해야 한다."
+  },
+  {
+    "id": "kafka-mcq-009",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kafka 파티션의 로그 파일 구조에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "브로커는 조회 성능을 위해 레코드를 키의 해시 순서로 정렬해 세그먼트에 저장한다",
+      "파티션 디렉터리는 여러 세그먼트로 나뉘고, 각 세그먼트는 .log, .index, .timeindex 파일로 구성된다",
+      "세그먼트는 log.segment.bytes(기본 1GB)에 도달하거나 log.roll.ms 시간이 지나면 롤링된다",
+      ".index는 오프셋에서 파일 내 물리 위치를 찾기 위한 희소(sparse) 인덱스다"
+    ],
+    "answer_index": 0,
+    "explanation": "Kafka의 로그는 append-only 구조이며 레코드는 도착한 오프셋 순서대로만 기록된다. 키로 정렬하거나 재배치하는 동작은 없고, 키 기반 조회를 위한 랜덤 액세스 인덱스도 제공하지 않는다. 순차 쓰기와 순차 읽기를 전제로 하기 때문에 zero-copy와 페이지 캐시 활용이 가능하다는 점이 Kafka 성능의 핵심이다."
+  },
+  {
+    "id": "kafka-mcq-010",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kafka 컨슈머의 poll 기반 동작에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "컨슈머는 브로커가 푸시해 주는 것이 아니라 스스로 fetch(pull)하여 레코드를 가져온다",
+      "heartbeat는 백그라운드 스레드가 계속 보내므로 poll을 오래 호출하지 않아도 그룹에서 제외되지 않는다",
+      "poll 한 번에 최대 max.poll.records(기본 500)개의 레코드를 반환한다",
+      "fetch.min.bytes와 fetch.max.wait.ms로 브로커가 응답을 얼마나 모아 보낼지 조정할 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "heartbeat 스레드가 살아 있어도 poll 간격이 max.poll.interval.ms(기본 5분)를 넘기면 컨슈머는 스스로 그룹을 떠나고 리밸런싱이 일어난다. 즉 살아 있음(session.timeout.ms, heartbeat)과 진행 중임(max.poll.interval.ms, poll 주기)은 서로 다른 두 가지 감시 장치이며, 처리 지연으로 인한 이탈은 후자로 판정된다."
+  },
+  {
+    "id": "kafka-mcq-011",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "운영 중인 토픽의 파티션 수를 12에서 24로 늘렸을 때 예상되는 결과로 틀린 것은?",
+    "choices": [
+      "기본 파티셔너의 해시 대상 파티션 수가 바뀌므로, 같은 키가 이전과 다른 파티션으로 갈 수 있다",
+      "이미 저장된 데이터는 재분배되지 않고 기존 파티션에 그대로 남는다",
+      "파티션 수는 kafka-topics.sh --alter로 줄이는 것도 가능하므로 과도하게 늘려도 나중에 되돌릴 수 있다",
+      "브로커의 파일 핸들과 메모리 사용량, 리더 선출 대상과 복제 연결 수가 함께 늘어난다"
+    ],
+    "answer_index": 2,
+    "explanation": "Kafka는 파티션 수 감소를 지원하지 않는다. 파티션을 줄이려면 새 토픽을 만들어 데이터를 재적재하고 컨슈머를 전환해야 한다. 그래서 파티션 수는 되돌릴 수 없는 결정으로 취급하고 처음부터 여유를 조금만 두는 것이 정석이다. 또한 파티션을 늘리면 키 해시 분포가 바뀌어 같은 키의 순서 보장이 증설 시점을 기준으로 끊어질 수 있다."
+  },
+  {
+    "id": "kafka-mcq-012",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "replication.factor=3, min.insync.replicas=2, 프로듀서 acks=all인 토픽에서 브로커 2대가 동시에 내려가 ISR이 1이 되었다. 이 상황에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "프로듀서는 NotEnoughReplicasException 계열 오류를 받고 쓰기가 거부된다",
+      "min.insync.replicas는 브로커 또는 토픽 수준 설정이며 acks=all과 함께 쓰일 때 의미를 가진다",
+      "리더가 살아 있으므로 컨슈머는 해당 파티션을 계속 읽을 수 있다",
+      "ISR이 1이 되면 리더도 읽기 요청을 거부하므로 컨슈머 소비도 함께 중단된다"
+    ],
+    "answer_index": 3,
+    "explanation": "min.insync.replicas는 쓰기 경로에만 적용되는 제약이다. ISR이 임계값 아래로 떨어지면 acks=all 쓰기는 거부되지만, 리더가 살아 있는 한 컨슈머는 high watermark까지의 데이터를 정상적으로 읽을 수 있다. 즉 이 설정은 가용성을 일부 희생해 내구성을 지키는 장치이며, 그 희생은 쓰기 측에서만 발생한다."
+  },
+  {
+    "id": "kafka-mcq-013",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "프로듀서 멱등성(enable.idempotence=true)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "애플리케이션이 같은 내용의 메시지를 두 번 send()해도 브로커가 페이로드를 비교해 중복을 제거해 준다",
+      "브로커가 (PID, 파티션, 시퀀스 번호)를 추적해 재시도로 인한 중복 기록을 걸러낸다",
+      "Kafka 3.0 이상에서는 기본값이 true이며, acks=all과 retries>0을 함께 요구한다",
+      "max.in.flight.requests.per.connection이 5 이하여야 사용할 수 있고, 그 범위에서는 순서도 유지된다"
+    ],
+    "answer_index": 0,
+    "explanation": "멱등 프로듀서는 프로듀서 내부 재시도로 인한 중복만 제거한다. 애플리케이션이 두 번 send()하면 서로 다른 시퀀스 번호가 부여된 별개의 레코드이므로 둘 다 저장된다. 브로커가 페이로드를 비교하는 로직은 없다. 따라서 애플리케이션 레벨 중복은 이벤트 ID 기반 중복 제거나 멱등 쓰기로 소비 측에서 막아야 한다."
+  },
+  {
+    "id": "kafka-mcq-014",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "컨슈머 로그에 member ... has left the group because it exceeded max.poll.interval.ms 메시지가 반복 출력된다. 이 상황에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "poll 사이의 처리 시간이 max.poll.interval.ms(기본 5분)를 넘겨 컨슈머가 스스로 그룹을 떠난 것이다",
+      "session.timeout.ms를 크게 늘리면 max.poll.interval.ms 초과로 인한 이탈도 함께 해결된다",
+      "max.poll.records를 줄여 한 번의 poll이 처리해야 하는 레코드 수를 낮추면 완화된다",
+      "heartbeat는 별도 스레드가 계속 보내므로 이 이탈은 session.timeout.ms 초과와는 다른 원인이다"
+    ],
+    "answer_index": 1,
+    "explanation": "두 타임아웃은 서로 독립적이다. session.timeout.ms는 heartbeat가 끊겼는지를 보는 값이고, max.poll.interval.ms는 poll이 제때 다시 호출되는지를 보는 값이다. 처리 지연 때문에 이탈하는 경우 session.timeout.ms를 늘려도 아무 효과가 없고, max.poll.interval.ms를 늘리거나 max.poll.records를 줄여 poll 주기를 짧게 만들어야 한다."
+  },
+  {
+    "id": "kafka-mcq-015",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "컨슈머 그룹 리밸런싱 프로토콜에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "eager 방식은 모든 컨슈머가 파티션을 일단 반납한 뒤 재할당받는 stop-the-world 방식이다",
+      "CooperativeStickyAssignor는 이동이 필요한 파티션만 반납하므로 리밸런싱 중 중단 범위가 작다",
+      "eager에서 CooperativeStickyAssignor로 전환할 때는 설정만 바꿔 한 번에 롤링 재시작하면 된다",
+      "cooperative 방식은 필요한 경우 리밸런싱을 두 번의 라운드로 나누어 수행한다"
+    ],
+    "answer_index": 2,
+    "explanation": "eager에서 cooperative로 전환하려면 두 단계 롤링 배포가 필요하다. 1단계에서 partition.assignment.strategy에 기존 전략과 CooperativeStickyAssignor를 함께 나열해 배포하고, 모든 인스턴스가 올라간 뒤 2단계에서 기존 전략을 제거한다. 한 번에 바꾸면 그룹 내에 서로 호환되지 않는 프로토콜이 섞여 리밸런싱이 실패할 수 있다."
+  },
+  {
+    "id": "kafka-mcq-016",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "정적 멤버십(group.instance.id, KIP-345)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "컨슈머에 고정 ID를 부여해 재시작 후에도 같은 파티션 할당을 유지하려는 기능이다",
+      "session.timeout.ms 안에 같은 ID로 컨슈머가 돌아오면 리밸런싱이 발생하지 않는다",
+      "쿠버네티스처럼 롤링 재배포가 잦은 환경에서 불필요한 리밸런싱을 줄이는 데 유용하다",
+      "정적 멤버가 영구히 종료된 경우에도 코디네이터가 즉시 감지해 파티션을 곧바로 재할당한다"
+    ],
+    "answer_index": 3,
+    "explanation": "정적 멤버십은 재시작 중인 것과 영구 종료를 구분하지 못하므로, 멤버가 완전히 사라져도 session.timeout.ms가 만료될 때까지 그 파티션은 재할당되지 않고 소비가 멈춘다. 즉시 정리하려면 AdminClient의 removeMembersFromConsumerGroup(또는 kafka-consumer-groups.sh)로 멤버를 명시적으로 제거해야 한다. 이 때문에 session.timeout.ms를 너무 크게 잡으면 장애 시 복구가 늦어진다."
+  },
+  {
+    "id": "kafka-mcq-017",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "cleanup.policy=compact 토픽의 동작에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "컴팩션이 끝나면 살아남은 레코드에 0부터 연속된 오프셋이 다시 부여되어 빈 구간이 사라진다",
+      "컴팩션은 키별로 최신 값만 남기며, 현재 쓰기 중인 액티브 세그먼트는 정리 대상에서 제외된다",
+      "값이 null인 톰스톤 레코드는 삭제를 표시하며 delete.retention.ms(기본 24시간) 이후 실제로 제거된다",
+      "min.cleanable.dirty.ratio(기본 0.5)에 도달해야 로그 클리너가 해당 파티션을 정리하기 시작한다"
+    ],
+    "answer_index": 0,
+    "explanation": "컴팩션은 오프셋을 절대 바꾸지 않는다. 정리된 레코드의 오프셋은 그대로 비어 있어 로그에 구멍(gap)이 생기며, 컨슈머는 연속되지 않은 오프셋을 받는 것을 정상으로 처리해야 한다. 오프셋이 재부여된다면 이미 커밋된 컨슈머 오프셋의 의미가 깨지기 때문에 구조적으로 불가능한 동작이다."
+  },
+  {
+    "id": "kafka-mcq-018",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "프로듀서 처리량 튜닝에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "Apache Kafka 4.0부터 linger.ms 기본값이 0에서 5로 바뀌어 기본 설정에서도 배치가 형성된다",
+      "batch.size를 늘리면 배치가 그 크기만큼 채워질 때까지 반드시 기다리므로 지연이 batch.size에 비례해 증가한다",
+      "batch.size는 파티션별 배치의 상한 바이트이며, batch.size와 linger.ms 중 먼저 충족된 조건에서 전송된다",
+      "compression.type=zstd 등을 적용하면 네트워크와 디스크 사용량은 줄지만 프로듀서 CPU 사용량은 늘어난다"
+    ],
+    "answer_index": 1,
+    "explanation": "batch.size는 상한일 뿐 채워질 때까지 기다리게 만드는 값이 아니다. 대기 시간을 결정하는 것은 linger.ms이고, batch.size를 키워도 linger.ms가 만료되면 부분적으로 채워진 배치가 그대로 전송된다. 그래서 지연의 상한은 batch.size가 아니라 linger.ms로 통제한다. KIP-1030으로 4.0에서 linger.ms 기본값이 5ms가 된 것도 이 트레이드오프를 조정한 변경이다."
+  },
+  {
+    "id": "kafka-mcq-019",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "프로듀서 파티셔너의 동작에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "키가 있으면 키의 murmur2 해시를 파티션 수로 나눈 나머지로 파티션을 결정한다",
+      "Kafka 3.3 이상에서 키가 null이면 배치가 준비될 때까지 한 파티션에 몰아 보내는 sticky 방식이 기본이다",
+      "키가 null일 때는 레코드마다 라운드로빈으로 파티션을 바꾸므로 배치 효율이 가장 높아진다",
+      "ProducerRecord에 파티션 번호를 직접 지정하면 파티셔너는 호출되지 않는다"
+    ],
+    "answer_index": 2,
+    "explanation": "레코드마다 파티션을 바꾸면 파티션별 배치가 잘게 쪼개져 배치 효율은 오히려 떨어진다. 이 문제 때문에 2.4에서 sticky partitioner가 도입되고, 3.3(KIP-794)에서는 브로커 부하까지 반영하는 uniform sticky 방식이 기본이 되었으며 라운드로빈 기본 동작은 폐기되었다. 나머지 세 설명은 정확하다."
+  },
+  {
+    "id": "kafka-mcq-020",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "컨슈머 그룹의 lag이 커진 상황을 진단할 때의 설명으로 틀린 것은?",
+    "choices": [
+      "lag은 파티션별 log end offset(read_committed에서는 LSO)과 커밋된 오프셋의 차이로 계산된다",
+      "특정 파티션에만 lag이 몰려 있으면 키 편향으로 인한 핫 파티션을 의심해야 한다",
+      "컨슈머 인스턴스를 파티션 수보다 많이 늘려도 처리량은 더 이상 증가하지 않는다",
+      "자동 커밋을 수동 커밋으로 바꾸면 커밋 오버헤드가 줄어 lag이 근본적으로 해소된다"
+    ],
+    "answer_index": 3,
+    "explanation": "커밋 방식은 처리 시맨틱(at-least-once 대 at-most-once)과 안정성에 관한 선택이며 처리량 병목의 원인이 아니다. 오프셋 커밋은 배치로 이루어지는 매우 가벼운 작업이므로 방식을 바꿔도 lag은 해소되지 않는다. lag의 실제 원인은 유입량 증가, 컨슈머 처리 로직 병목, 파티션 편향, 리밸런싱 반복 등에서 찾아야 한다."
+  },
+  {
+    "id": "kafka-mcq-021",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "처리 시맨틱과 오프셋 커밋 시점에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "enable.auto.commit=true는 poll로 가져온 레코드의 처리 완료를 확인한 뒤 커밋하므로 at-least-once를 보장한다",
+      "처리 전에 커밋하면 장애 시 메시지를 잃을 수 있으므로 at-most-once에 가까워진다",
+      "처리 후에 커밋하면 장애 시 재처리가 발생할 수 있어 at-least-once가 되고, 컨슈머 로직의 멱등성이 필요하다",
+      "commitSync는 커밋 완료까지 블로킹하며 재시도하고, commitAsync는 블로킹하지 않지만 재시도하지 않는다"
+    ],
+    "answer_index": 0,
+    "explanation": "자동 커밋은 애플리케이션의 처리 완료를 알지 못한다. 다음 poll 호출 시 이전 poll이 반환한 레코드를 처리했다고 가정하고 커밋하므로, 처리 중 프로세스가 죽으면 커밋은 되었지만 처리되지 않은 레코드가 생겨 유실이 발생할 수 있다. 즉 자동 커밋은 at-least-once를 보장하지 않는다. 정확한 제어가 필요하면 enable.auto.commit=false로 두고 처리 후 수동 커밋해야 한다."
+  },
+  {
+    "id": "kafka-mcq-022",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "ISR이 자주 축소(shrink)되고 under-replicated partitions가 발생하는 상황에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "리더는 팔로워가 replica.lag.time.max.ms(기본 30초) 안에 리더의 로그 끝까지 따라오지 못하면 ISR에서 제외한다",
+      "ISR에서 한 번 제외된 팔로워는 리더 자격을 영구히 잃으므로 해당 복제본을 재생성해야 한다",
+      "브로커의 긴 GC 정지, 네트워크 지연, 디스크 I/O 포화가 흔한 원인이다",
+      "num.replica.fetchers를 늘리면 팔로워의 복제 병렬도가 높아져 따라잡기에 도움이 될 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "ISR은 동적인 집합이다. 제외된 팔로워가 리더의 로그 끝까지 따라잡으면 자동으로 ISR에 재합류(expand)하고 다시 리더 후보가 된다. 참고로 replica.lag.time.max.ms 기본값은 KIP-537로 2.5부터 10초에서 30초로 늘어났는데, 일상적인 GC 정지 때문에 ISR이 불필요하게 흔들리는 것을 막기 위한 변경이었다."
+  },
+  {
+    "id": "kafka-mcq-023",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "컨슈머가 가장 가까운 복제본에서 읽게 하는 기능(KIP-392, follower fetching)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "브로커에 replica.selector.class로 RackAwareReplicaSelector를 설정하고 컨슈머에 client.rack을 지정해야 동작한다",
+      "가용 영역(AZ) 간 네트워크 전송 비용과 지연을 줄이는 것이 주된 목적이다",
+      "팔로워에서 읽으면 리더보다 최신 데이터를 먼저 볼 수 있어 데이터 신선도가 좋아진다",
+      "브로커 기본 셀렉터는 항상 리더에서 읽게 하는 LeaderSelector다"
+    ],
+    "answer_index": 2,
+    "explanation": "팔로워는 정의상 리더보다 뒤처지거나 같을 수밖에 없고, 노출되는 범위도 high watermark까지다. 따라서 follower fetching은 신선도를 좋게 하는 기능이 아니라 오히려 약간의 추가 지연을 감수하는 대신 크로스 AZ 트래픽 비용과 네트워크 왕복을 줄이는 기능이다. 나머지 세 설명은 정확하다."
+  },
+  {
+    "id": "kafka-mcq-024",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "디스크 사용량을 줄이기 위해 토픽 리텐션을 조정할 때의 설명으로 틀린 것은?",
+    "choices": [
+      "retention.ms와 retention.bytes가 함께 설정되면 둘 중 먼저 충족되는 조건으로 삭제가 일어난다",
+      "retention.bytes는 토픽 전체가 아니라 파티션 단위 상한이므로, 실제 사용량은 파티션 수와 복제본 수를 곱해 산정해야 한다",
+      "리텐션을 줄여도 세그먼트가 롤링되지 않으면 삭제가 즉시 일어나지 않으므로 segment.bytes나 segment.ms 조정이 필요할 수 있다",
+      "retention.ms를 -1로 지정하면 리텐션이 0으로 해석되어 데이터가 즉시 삭제된다"
+    ],
+    "answer_index": 3,
+    "explanation": "retention.ms=-1은 시간 기반 리텐션을 비활성화해 무제한 보존한다는 의미다. retention.bytes=-1도 마찬가지로 용량 제한 없음이다. 즉시 삭제를 원한다면 retention.ms를 아주 작은 값으로 설정한 뒤 세그먼트가 롤링되도록 유도하고, 정리가 끝나면 원래 값으로 되돌리는 방식을 쓴다."
+  },
+  {
+    "id": "kafka-mcq-025",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Kafka 4.0에서 GA된 차세대 컨슈머 리밸런스 프로토콜(KIP-848)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "새 프로토콜을 쓰면 컨슈머 수가 파티션 수를 초과해도 한 파티션을 여러 컨슈머가 동시에 처리할 수 있다",
+      "파티션 할당 계산을 그룹 리더 컨슈머가 아니라 브로커 측 그룹 코디네이터가 수행한다",
+      "stop-the-world 리밸런싱을 없애고 증분 방식으로 할당을 조정해 안정성과 성능을 높인다",
+      "서버 측에서는 기본 활성화되지만 컨슈머는 group.protocol=consumer로 옵트인해야 새 프로토콜을 사용한다"
+    ],
+    "answer_index": 0,
+    "explanation": "KIP-848은 리밸런싱 방식만 개선한 것이고, 한 파티션은 여전히 그룹 내 한 컨슈머에게만 할당된다. 파티션 수를 넘는 컨슈머로 한 파티션을 나눠 처리하는 것은 KIP-932의 share group(큐 시맨틱)이 제공하는 별개의 기능이다. 두 KIP를 혼동하는 것이 흔한 실수다."
+  },
+  {
+    "id": "kafka-mcq-026",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Kafka 트랜잭션과 exactly-once 시맨틱에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "isolation.level=read_committed 컨슈머는 LSO(Last Stable Offset)까지만 읽으므로 진행 중인 트랜잭션 이후의 레코드는 보이지 않는다",
+      "어보트된 트랜잭션의 레코드는 커밋 시점에 로그에서 물리적으로 제거되므로 컨슈머는 어보트 마커를 해석할 필요가 없다",
+      "transactional.id는 재시작 후에도 같은 값을 재사용해야 하며, producer epoch를 올려 이전 좀비 인스턴스를 펜싱한다",
+      "트랜잭션 상태는 내부 토픽 __transaction_state에 저장되고 트랜잭션 코디네이터가 관리한다"
+    ],
+    "answer_index": 1,
+    "explanation": "어보트된 레코드도 로그에 그대로 남는다. append-only 로그에서 특정 레코드만 지울 수 없기 때문이다. 대신 브로커가 컨트롤 레코드(커밋/어보트 마커)와 어보트 인덱스(.txnindex)를 유지하고, read_committed 컨슈머가 이를 이용해 어보트된 레코드를 클라이언트 측에서 필터링한다. 그래서 어보트가 많으면 읽기 비용과 디스크 사용량이 늘어난다."
+  },
+  {
+    "id": "kafka-mcq-027",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "unclean.leader.election.enable 설정에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "true로 두면 ISR에 남은 복제본이 없을 때 ISR 밖 복제본을 리더로 승격시켜 가용성을 확보한다",
+      "승격된 복제본이 이전 리더보다 뒤처져 있었다면 그 차이만큼 데이터가 유실되고 로그가 절단될 수 있다",
+      "기본값이 true이므로 데이터 무결성이 중요한 토픽은 명시적으로 false로 바꿔야 한다",
+      "acks=all과 min.insync.replicas=2를 설정했더라도 unclean 승격이 일어나면 이미 ack된 데이터가 사라질 수 있다"
+    ],
+    "answer_index": 2,
+    "explanation": "unclean.leader.election.enable의 기본값은 false다(0.11 이후 브로커 기본값). 즉 기본 동작은 데이터 무결성을 우선해 ISR이 모두 사라지면 해당 파티션을 오프라인으로 두는 것이고, 가용성을 우선하려면 명시적으로 true로 켜야 한다. 켜는 순간 acks=all과 min.insync.replicas로 만든 무손실 보장이 무력화될 수 있다는 것이 핵심 트레이드오프다."
+  },
+  {
+    "id": "kafka-mcq-028",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Leader Epoch(KIP-101)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "리더가 바뀔 때마다 증가하는 에포크 번호를 로그에 기록해, 팔로워가 어디까지 절단(truncate)해야 하는지 정확히 판단하게 한다",
+      "이전에는 high watermark만으로 복구했기 때문에 리더 교체가 겹칠 때 로그 불일치나 유실이 발생할 수 있었다",
+      "팔로워는 OffsetsForLeaderEpoch 요청으로 에포크별 종료 오프셋을 확인한 뒤 절단 지점을 결정한다",
+      "Leader Epoch 도입으로 로그 일관성이 확보되었기 때문에 unclean leader election을 켜도 데이터 유실이 발생하지 않는다"
+    ],
+    "answer_index": 3,
+    "explanation": "Leader Epoch가 해결한 것은 clean leader election 상황에서 high watermark만으로 절단 지점을 판단할 때 생기던 로그 불일치와 유실이다. unclean leader election은 애초에 뒤처진 복제본을 의도적으로 리더로 만드는 것이므로, Leader Epoch가 있어도 커밋된 데이터의 유실은 그대로 발생한다. 두 메커니즘은 해결 대상이 다르다."
+  },
+  {
+    "id": "kafka-mcq-029",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Kafka 계층형 스토리지(Tiered Storage, KIP-405)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "현재 쓰기가 진행 중인 액티브 세그먼트까지 즉시 원격 계층으로 업로드되므로 브로커 로컬 디스크가 사실상 필요 없어진다",
+      "오래된 로그 세그먼트를 S3 같은 객체 스토리지로 오프로드하고 로컬 디스크에는 최근 데이터만 유지한다",
+      "토픽 단위로 remote.storage.enable을 켜서 활성화하며, 클라이언트 코드를 수정하지 않아도 원격 계층의 데이터를 읽을 수 있다",
+      "local.retention.ms(또는 local.retention.bytes)로 로컬 보존 범위를, retention.ms로 전체 보존 범위를 따로 지정한다"
+    ],
+    "answer_index": 0,
+    "explanation": "계층형 스토리지는 롤링이 완료되고 high watermark까지 복제된 비활성 세그먼트만 원격으로 업로드한다. 액티브 세그먼트는 대상이 아니며(이를 다루는 KIP-1176이 별도로 진행 중), 최근 데이터는 여전히 로컬 디스크와 페이지 캐시에서 서빙되어야 저지연 소비가 가능하다. 로컬 디스크가 불필요해지는 것이 아니라 필요한 용량이 줄어드는 것이다. 참고로 이 기능은 3.9에서 GA되었다."
+  },
+  {
+    "id": "kafka-mcq-030",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Kafka 보안(인증과 인가) 설정에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "SASL/SCRAM, SASL/GSSAPI(Kerberos), SASL/OAUTHBEARER, mTLS 등으로 클라이언트를 인증할 수 있다",
+      "ACL을 하나라도 설정하면 allow.everyone.if.no.acl.found 값과 무관하게 나머지 리소스는 모두 허용된다",
+      "KRaft 모드에서는 authorizer.class.name에 StandardAuthorizer를 사용하며 ACL이 클러스터 메타데이터 로그에 저장된다",
+      "리스너별로 서로 다른 보안 프로토콜(예: 내부 통신은 PLAINTEXT, 외부는 SASL_SSL)을 설정할 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "Kafka의 인가 모델은 기본 거부(default deny)다. authorizer가 활성화되면 매칭되는 allow ACL이 있어야 접근이 허용되고, ACL이 전혀 없는 리소스의 처리 방식은 allow.everyone.if.no.acl.found(기본 false)가 결정한다. 특정 리소스에 ACL을 설정하는 것이 다른 리소스를 개방하는 효과를 내지는 않으며, deny ACL은 allow보다 우선한다."
+  },
+  {
+    "id": "kafka-mcq-031",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Kafka 브로커의 zero-copy(sendfile) 최적화에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "컨슈머가 요청한 로그 구간을 OS 페이지 캐시에서 소켓으로 직접 전송해 유저 공간 복사를 줄인다",
+      "SSL/TLS 리스너를 사용하면 암호화를 위해 데이터가 유저 공간을 거쳐야 하므로 zero-copy 이점이 사라진다",
+      "브로커가 로그 데이터를 JVM 힙에 캐시하므로 힙을 크게 잡을수록 zero-copy 효율이 올라간다",
+      "프로듀서와 컨슈머가 같은 메시지 포맷과 압축 방식을 사용하면 브로커가 재변환하지 않아 zero-copy가 유지된다"
+    ],
+    "answer_index": 2,
+    "explanation": "Kafka 브로커는 로그를 JVM 힙에 캐시하지 않고 OS 페이지 캐시에 의존한다. 그래서 브로커 힙은 오히려 작게(보통 6GB 내외) 잡고 남는 메모리를 페이지 캐시에 양보하는 것이 정석이며, 힙을 크게 잡으면 GC 정지가 길어져 ISR 축소를 유발할 수 있다. 힙 크기와 zero-copy 효율 사이에는 양의 상관관계가 없다."
+  },
+  {
+    "id": "kafka-mcq-032",
+    "category": "kafka",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Kafka의 share group(KIP-932, 큐 시맨틱)에 대한 설명으로 틀린 것은?",
+    "choices": [
+      "한 파티션의 레코드를 여러 컨슈머가 나눠 처리할 수 있어, 컨슈머 수를 파티션 수보다 많게 둘 수 있다",
+      "레코드 단위로 acknowledge하며 처리 실패 시 재전달(delivery attempt)이 가능해 작업 큐 패턴에 적합하다",
+      "share group을 사용하려면 클러스터의 모든 브로커가 해당 기능을 지원하는 버전이어야 한다",
+      "share group도 일반 컨슈머 그룹처럼 파티션별 오프셋을 커밋하므로 파티션 내 처리 순서가 그대로 보장된다"
+    ],
+    "answer_index": 3,
+    "explanation": "share group은 파티션별 단일 오프셋 커밋 모델을 버리고 레코드 단위 획득(acquire)과 확인(acknowledge) 상태를 브로커가 관리한다. 여러 컨슈머가 같은 파티션을 동시에 처리하므로 파티션 내 순서 보장은 포기하는 대신 파티션 수와 무관한 컨슈머 확장성과 개별 재시도를 얻는다. 순서가 중요하면 기존 컨슈머 그룹을 써야 한다."
+  },
+  {
+    "id": "kafka-sub-001",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "Kafka의 토픽, 파티션, 컨슈머 그룹의 관계를 설명하고, 소비 처리량을 늘리려면 무엇을 먼저 확인해야 하는지 설명하라.",
+    "model_answer": "토픽은 메시지의 논리적 분류 단위이고, 파티션은 토픽을 물리적으로 분할한 append-only 로그이며 병렬성의 최소 단위다. 하나의 컨슈머 그룹 안에서 한 파티션은 최대 한 컨슈머에게만 할당되므로, 컨슈머 수를 파티션 수보다 많이 늘려도 초과분은 유휴 상태로 남는다. 따라서 소비 처리량을 늘리려면 먼저 파티션 수가 충분한지 확인해야 하고, 부족하면 파티션을 늘린 뒤 컨슈머를 확장한다. 또한 특정 파티션에만 lag이 몰리는 키 편향이 없는지, 컨슈머 처리 로직 자체가 병목은 아닌지도 함께 확인한다. 서로 다른 컨슈머 그룹은 같은 파티션을 독립적으로 읽을 수 있어 팬아웃 소비가 가능하다.",
+    "keywords": [
+      "파티션",
+      "컨슈머 그룹",
+      "병렬성",
+      "키 편향"
+    ],
+    "explanation": "컨슈머를 늘리는 것만으로는 처리량이 올라가지 않는다는 점, 파티션 수가 소비 병렬성의 상한이라는 점을 이해했는지 확인하는 문제다."
+  },
+  {
+    "id": "kafka-sub-002",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "로그 리텐션 정책 delete와 compact(로그 컴팩션)의 차이를 설명하고, 각각 어떤 데이터에 적합한지 예를 들어 설명하라.",
+    "model_answer": "cleanup.policy=delete는 retention.ms나 retention.bytes 조건을 넘긴 세그먼트를 통째로 삭제하는 시간·용량 기반 정책으로, 클릭 로그나 메트릭처럼 최근 구간만 필요한 이벤트 스트림에 적합하다. cleanup.policy=compact는 같은 키의 이전 값을 정리해 키별 최신 값만 남기므로, 사용자 프로필이나 상품 마스터처럼 현재 상태를 복원해야 하는 데이터에 적합하다. 컴팩션 토픽에서 삭제는 값이 null인 톰스톤 레코드로 표현하며, 톰스톤은 delete.retention.ms 이후 제거된다. 컴팩션은 오프셋을 재부여하지 않으므로 로그에 빈 구간이 생긴다. 두 정책을 compact,delete로 함께 지정하면 키별 최신 값을 유지하면서 오래된 데이터까지 삭제할 수 있다.",
+    "keywords": [
+      "cleanup.policy",
+      "톰스톤",
+      "키별 최신 값",
+      "delete.retention.ms"
+    ],
+    "explanation": "두 정책의 목적 차이(이벤트 스트림 대 상태 스냅샷)와 톰스톤 개념을 설명할 수 있는지 확인한다."
+  },
+  {
+    "id": "kafka-sub-003",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "프로듀서의 acks 설정(0, 1, all)의 차이를 설명하고, 금융 거래 이벤트를 다룰 때 어떤 설정을 선택하고 왜 그런지 설명하라.",
+    "model_answer": "acks=0은 브로커 응답을 기다리지 않아 처리량과 지연은 가장 유리하지만 유실 위험이 가장 크다. acks=1은 리더가 로컬 로그에 기록한 뒤 응답하므로, 복제가 끝나기 전에 리더가 장애를 겪으면 유실될 수 있다. acks=all은 현재 ISR에 속한 모든 복제본이 기록을 확인한 뒤 응답하므로 가장 안전하지만 지연이 늘어난다. 금융 거래 이벤트처럼 유실이 허용되지 않는 경우 acks=all과 함께 replication.factor=3, min.insync.replicas=2를 설정해 브로커 한 대가 빠져도 무손실을 유지하고, unclean.leader.election.enable=false로 뒤처진 복제본이 리더가 되는 것을 막는다. 또한 enable.idempotence=true로 재시도로 인한 중복 기록까지 방지한다.",
+    "keywords": [
+      "acks=all",
+      "min.insync.replicas",
+      "ISR",
+      "enable.idempotence"
+    ],
+    "explanation": "acks=all의 기준이 replication.factor가 아니라 ISR이라는 점, 그래서 min.insync.replicas가 반드시 함께 필요하다는 점이 핵심이다."
+  },
+  {
+    "id": "kafka-sub-004",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "컨슈머 오프셋이 무엇이고 어디에 저장되는지 설명하고, 자동 커밋과 수동 커밋의 트레이드오프를 설명하라.",
+    "model_answer": "오프셋은 파티션 내 각 레코드에 부여되는 순번이며, 컨슈머 그룹이 어디까지 읽었는지는 커밋된 오프셋으로 관리된다. 커밋된 오프셋은 내부 토픽 __consumer_offsets에 (그룹, 토픽, 파티션) 키로 저장되고, 이 토픽은 로그 컴팩션으로 키별 최신 값만 유지한다. 커밋되는 값은 마지막으로 처리한 오프셋 + 1, 즉 다음에 읽을 위치다. 자동 커밋은 enable.auto.commit=true로 auto.commit.interval.ms 주기에 맞춰 커밋되어 구현이 간단하지만, 처리 완료와 무관하게 커밋되므로 장애 시 유실이나 중복이 생길 수 있다. 수동 커밋은 처리를 끝낸 뒤 commitSync 또는 commitAsync로 커밋해 at-least-once를 명확히 제어할 수 있지만 코드가 복잡해지고 컨슈머 로직에 멱등성이 필요하다.",
+    "keywords": [
+      "__consumer_offsets",
+      "자동 커밋",
+      "commitSync",
+      "at-least-once"
+    ],
+    "explanation": "오프셋 저장 위치와 커밋 값이 처리 오프셋 + 1이라는 점, 자동 커밋이 at-least-once를 보장하지 않는다는 점을 확인한다."
+  },
+  {
+    "id": "kafka-sub-005",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "replication.factor와 ISR(In-Sync Replicas)의 개념을 설명하고, ISR이 줄어들면 어떤 영향이 있는지 설명하라.",
+    "model_answer": "replication.factor는 파티션 복제본의 총 개수이며 리더도 포함된다. 팔로워는 리더에게 fetch 요청을 보내 데이터를 복제하고, replica.lag.time.max.ms(기본 30초) 안에 리더의 로그 끝까지 따라잡은 복제본 집합이 ISR이다. ISR이 줄어들면 under-replicated partitions 지표가 올라가고 내구성이 떨어지며, acks=all 쓰기는 ISR 크기가 min.insync.replicas 미만이 되는 순간 거부된다. 다만 리더가 살아 있으면 컨슈머 읽기는 계속 가능하다. ISR 축소의 흔한 원인은 브로커의 긴 GC 정지, 네트워크 지연, 디스크 I/O 포화이며, 따라잡으면 자동으로 ISR에 재합류한다.",
+    "keywords": [
+      "replica.lag.time.max.ms",
+      "under-replicated",
+      "min.insync.replicas",
+      "ISR"
+    ],
+    "explanation": "ISR이 동적 집합이라는 점, min.insync.replicas 제약이 쓰기 경로에만 적용된다는 점이 채점 포인트다."
+  },
+  {
+    "id": "kafka-sub-006",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "Kafka가 디스크 기반 저장소인데도 높은 처리량을 낼 수 있는 구조적 이유를 3가지 이상 설명하라.",
+    "model_answer": "첫째, 로그를 append-only로 순차 쓰기 하므로 랜덤 I/O 없이 디스크의 순차 처리량을 그대로 활용한다. 둘째, 읽기는 OS 페이지 캐시와 zero-copy(sendfile)를 이용해 커널에서 소켓으로 직접 전송하므로 JVM 힙 복사와 컨텍스트 스위치를 줄인다. 셋째, 프로듀서와 컨슈머 모두 요청을 배치로 묶고 compression.type으로 배치를 압축해 네트워크 왕복과 대역폭을 줄인다. 넷째, 파티션 단위로 데이터를 분할해 브로커와 컨슈머를 수평 확장할 수 있다. 다섯째, 브로커는 메시지를 파싱하지 않고 바이트 그대로 저장하고 전달하므로 브로커 측 처리 오버헤드가 작다.",
+    "keywords": [
+      "순차 쓰기",
+      "페이지 캐시",
+      "zero-copy",
+      "배치",
+      "파티션"
+    ],
+    "explanation": "순차 I/O, 페이지 캐시와 zero-copy, 배치와 압축, 파티션 기반 수평 확장이라는 네 축을 설명할 수 있으면 충분하다."
+  },
+  {
+    "id": "kafka-sub-007",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "컨슈머 그룹에서 리밸런싱이 지나치게 잦게 발생하고 있다. 원인을 진단하는 순서와 완화 방법을 설명하라.",
+    "model_answer": "먼저 컨슈머 로그에서 이탈 사유를 확인한다. max.poll.interval.ms 초과 메시지가 보이면 poll 사이 처리 시간이 너무 긴 것이므로 max.poll.records를 줄이거나 처리 로직을 최적화해 poll 주기를 짧게 만든다. session.timeout.ms 초과나 heartbeat 실패라면 GC 정지, 네트워크 불안정, 컨슈머 프로세스의 잦은 재시작을 의심한다. 배포로 인한 재시작이 잦다면 group.instance.id를 부여한 정적 멤버십으로 재시작 중 리밸런싱을 억제하고, 할당 전략을 CooperativeStickyAssignor로 바꿔 stop-the-world 범위를 줄인다. 이때 전환은 두 단계 롤링 배포로 해야 한다. Kafka 4.0 이상이면 group.protocol=consumer로 차세대 리밸런스 프로토콜을 적용하는 것도 좋은 방법이다.",
+    "keywords": [
+      "max.poll.interval.ms",
+      "max.poll.records",
+      "정적 멤버십",
+      "CooperativeStickyAssignor",
+      "session.timeout.ms"
+    ],
+    "explanation": "session.timeout.ms와 max.poll.interval.ms를 구분하고, 각각에 맞는 처방을 제시하는지가 핵심이다."
+  },
+  {
+    "id": "kafka-sub-008",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "특정 컨슈머 그룹의 lag이 수백만 건으로 급증했다는 알람을 받았다. 원인을 좁혀 가는 점검 순서와 대응 방법을 설명하라.",
+    "model_answer": "먼저 kafka-consumer-groups.sh --describe로 파티션별 lag 분포를 확인한다. 모든 파티션에 고르게 쌓였다면 유입량 증가나 컨슈머 처리 능력 부족이므로, 파티션 수와 컨슈머 인스턴스를 함께 늘려 스케일 아웃하거나 외부 API·DB 쓰기 같은 처리 병목을 개선한다. 특정 파티션에만 쌓였다면 키 편향으로 인한 핫 파티션이거나 그 파티션을 담당한 컨슈머만 느린 경우이므로 파티션 키 설계와 해당 인스턴스 상태를 확인한다. 다음으로 컨슈머가 리밸런싱을 반복하고 있는지, 특정 레코드에서 예외가 발생해 재처리 루프에 빠져 있는지 확인한다. 프로듀서 측 유입량 지표와 브로커의 디스크·네트워크 포화도 함께 본다. 급한 경우 컨슈머를 스케일 아웃하고, 처리 불가 구간은 데드레터 토픽으로 보내거나 오프셋을 이동시키되 리텐션 만료로 데이터가 사라지지 않는지 먼저 확인한다.",
+    "keywords": [
+      "kafka-consumer-groups",
+      "파티션별 lag",
+      "핫 파티션",
+      "리밸런싱",
+      "스케일 아웃"
+    ],
+    "explanation": "lag을 파티션 단위로 분해해 보는 습관과, 스케일 아웃 이전에 원인 분류를 먼저 하는 접근을 평가한다."
+  },
+  {
+    "id": "kafka-sub-009",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "주문 이벤트를 처리할 때 같은 주문 ID의 이벤트는 반드시 발생 순서대로 처리해야 한다는 요구사항이 있다. 어떻게 설계하고 어떤 설정을 확인해야 하는지 설명하라.",
+    "model_answer": "Kafka는 파티션 내부에서만 순서를 보장하므로, 주문 ID를 메시지 키로 사용해 같은 주문의 이벤트가 항상 같은 파티션으로 가게 한다. 프로듀서에서는 enable.idempotence=true로 두어 재시도 시 순서가 뒤바뀌지 않게 하고 max.in.flight.requests.per.connection을 5 이하로 유지한다. 멱등성을 끄고 retries를 쓰는 경우에는 max.in.flight.requests.per.connection=1이어야 순서가 보장된다. 컨슈머에서는 한 파티션의 레코드를 여러 스레드로 병렬 처리하면 순서가 깨지므로, 파티션 단위로 순차 처리하거나 키 단위 큐로 분배해 같은 키가 한 스레드에서만 처리되게 한다. 또한 파티션 수를 늘리면 기존 키의 해시 결과가 바뀌어 같은 주문이 다른 파티션으로 갈 수 있으므로, 파티션 증설 시점의 순서 역전 가능성을 고려해야 한다.",
+    "keywords": [
+      "메시지 키",
+      "enable.idempotence",
+      "max.in.flight.requests.per.connection",
+      "파티션 내부에서만"
+    ],
+    "explanation": "키 기반 파티셔닝, 프로듀서 인플라이트 제한, 컨슈머 측 병렬 처리 함정, 파티션 증설 시 해시 변경까지 짚는지 확인한다."
+  },
+  {
+    "id": "kafka-sub-010",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "새 토픽의 파티션 수를 어떻게 산정하는지 설명하고, 파티션을 과도하게 많이 두었을 때 치르는 대가를 설명하라.",
+    "model_answer": "목표 처리량을 파티션 하나가 감당할 수 있는 처리량으로 나누는 방식으로 시작한다. 즉 필요한 파티션 수는 목표 처리량을 프로듀서 기준 단일 파티션 처리량과 컨슈머 기준 단일 파티션 처리량 중 더 작은 값으로 나눈 값이며, 향후 증설 여유와 컨슈머 인스턴스 최대 개수도 함께 고려한다. 파티션이 과도하게 많으면 브로커의 파일 핸들과 메모리 사용량이 늘고, 프로듀서 배치가 파티션별로 잘게 쪼개져 배치 효율이 떨어진다. 또한 리더 선출 대상과 복제 연결이 늘어 브로커 장애 시 복구 시간이 길어지고, 리밸런싱과 메타데이터 전파 비용도 증가한다. 파티션 수는 줄일 수 없으므로 처음부터 과도하게 늘리지 말고 필요한 만큼에 약간의 여유만 두는 것이 안전하다.",
+    "keywords": [
+      "단일 파티션 처리량",
+      "파일 핸들",
+      "배치 효율",
+      "리더 선출"
+    ],
+    "explanation": "파티션 수를 처리량 기준으로 산정하는 공식과, 과다 파티션의 비용(배치 효율 저하, 복구 시간 증가, 감소 불가)을 설명하는지 본다."
+  },
+  {
+    "id": "kafka-sub-011",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "메시지를 절대 유실하면 안 된다는 요구사항을 만족시키기 위해 프로듀서, 브로커, 컨슈머 각 단계에서 어떤 설정을 해야 하는지와 그 대가를 설명하라.",
+    "model_answer": "프로듀서는 acks=all, enable.idempotence=true로 두고 retries를 충분히 크게, delivery.timeout.ms를 여유 있게 설정하며 send의 콜백과 예외를 반드시 처리해 실패를 삼키지 않게 한다. 브로커와 토픽은 replication.factor=3, min.insync.replicas=2, unclean.leader.election.enable=false로 두어 ISR 밖 복제본이 리더가 되어 커밋된 데이터가 사라지는 일을 막는다. 컨슈머는 enable.auto.commit=false로 두고 처리를 완료한 뒤 오프셋을 커밋해 at-least-once를 만든다. 대가는 지연 증가와 처리량 감소이며, ISR이 min.insync.replicas 미만으로 줄면 쓰기가 거부되어 가용성이 떨어진다. 또한 at-least-once에서는 중복이 발생할 수 있으므로 소비 측 멱등 처리가 필요하다.",
+    "keywords": [
+      "acks=all",
+      "min.insync.replicas",
+      "unclean.leader.election.enable=false",
+      "enable.auto.commit=false"
+    ],
+    "explanation": "무손실은 프로듀서 한 곳의 설정이 아니라 세 단계의 조합이라는 점, 그리고 내구성을 높이면 가용성이 내려간다는 트레이드오프를 인지하는지 확인한다."
+  },
+  {
+    "id": "kafka-sub-012",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "at-least-once 컨슈머에서 중복 처리를 방지하는 방법들을 설명하고, Kafka 트랜잭션만으로 해결되지 않는 경우를 설명하라.",
+    "model_answer": "가장 현실적인 방법은 소비 측을 멱등하게 만드는 것이다. 메시지에 고유한 이벤트 ID를 부여하고 처리 이력 테이블에 유니크 제약으로 기록해 이미 처리한 ID는 건너뛰거나, 대상 저장소에 UPSERT로 반영해 같은 메시지를 여러 번 처리해도 결과가 같게 만든다. 오프셋과 처리 결과를 같은 트랜잭션으로 커밋하는 트랜잭셔널 아웃박스 패턴도 사용된다. Kafka 트랜잭션은 Kafka에서 읽어 Kafka로 쓰는 read-process-write 구간에서만 exactly-once를 보장하므로, 외부 REST API 호출이나 외부 DB 쓰기, 이메일 발송 같은 부수 효과는 트랜잭션 커밋과 원자적으로 묶이지 않는다. 따라서 싱크가 외부 시스템이면 결국 멱등 쓰기나 중복 제거 장치가 필요하다.",
+    "keywords": [
+      "이벤트 ID",
+      "UPSERT",
+      "read-process-write",
+      "멱등"
+    ],
+    "explanation": "exactly-once의 범위가 Kafka 내부로 한정된다는 점과, 실무에서는 소비 측 멱등성이 최종 방어선이라는 점을 이해했는지 본다."
+  },
+  {
+    "id": "kafka-sub-013",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "수 MB 크기의 메시지를 Kafka로 보내야 한다. 어떤 설정을 조정해야 하는지, 그리고 대용량 페이로드를 Kafka에 직접 넣는 것이 권장되지 않는 이유를 설명하라.",
+    "model_answer": "브로커에서는 message.max.bytes(토픽 단위로는 max.message.bytes)와 replica.fetch.max.bytes를 함께 올려야 하며, 복제 측 한도를 놓치면 팔로워가 해당 레코드를 복제하지 못해 ISR이 깨진다. 프로듀서에서는 max.request.size와 batch.size, 컨슈머에서는 fetch.max.bytes와 max.partition.fetch.bytes를 함께 조정한다. 하지만 대용량 메시지는 브로커 메모리와 페이지 캐시를 잠식하고 압축·복제 비용과 GC 부담을 키우며, 레코드 하나의 처리 시간이 길어져 max.poll.interval.ms 초과로 리밸런싱을 유발하기 쉽다. 그래서 실무에서는 페이로드를 S3나 HDFS 같은 외부 저장소에 두고 Kafka에는 위치 참조와 메타데이터만 보내는 claim-check 패턴을 권장한다.",
+    "keywords": [
+      "message.max.bytes",
+      "replica.fetch.max.bytes",
+      "max.partition.fetch.bytes",
+      "claim-check"
+    ],
+    "explanation": "브로커, 복제, 프로듀서, 컨슈머 네 곳의 크기 제한을 모두 맞춰야 한다는 점과, 근본 해법이 외부 저장소 참조라는 점이 채점 포인트다."
+  },
+  {
+    "id": "kafka-sub-014",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "cleanup.policy=compact 토픽인데 디스크 사용량이 기대만큼 줄지 않고 중복 키가 계속 보인다. 가능한 원인들을 진단 순서대로 설명하라.",
+    "model_answer": "먼저 로그 클리너가 액티브 세그먼트는 정리하지 않는다는 점을 확인한다. 쓰기량이 적어 세그먼트가 롤링되지 않으면 대부분의 데이터가 액티브 세그먼트에 남아 정리되지 않으므로 segment.bytes나 segment.ms를 줄인다. 다음으로 min.cleanable.dirty.ratio(기본 0.5)를 확인한다. 더티 비율이 임계값에 도달하지 않으면 클리너가 동작하지 않으며, max.compaction.lag.ms를 지정하면 비율과 무관하게 정리를 강제할 수 있다. min.compaction.lag.ms가 크게 잡혀 있으면 최근 데이터가 정리 대상에서 제외된다. 또한 log.cleaner.enable이 꺼져 있는지, log.cleaner.threads가 부족해 클리너가 밀려 있는지, LogCleaner 스레드가 예외로 죽지 않았는지 브로커 로그와 max-dirty-percent 지표로 확인한다. 톰스톤은 delete.retention.ms 동안 남아 있으므로 즉시 사라지지 않는 것은 정상이다.",
+    "keywords": [
+      "액티브 세그먼트",
+      "min.cleanable.dirty.ratio",
+      "log.cleaner",
+      "delete.retention.ms"
+    ],
+    "explanation": "컴팩션이 즉시 일어나는 동작이 아니라 임계값과 세그먼트 롤링에 의존하는 백그라운드 작업이라는 점을 이해했는지 확인한다."
+  },
+  {
+    "id": "kafka-sub-015",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "토픽 A를 소비해 가공한 뒤 토픽 B로 쓰는 파이프라인에 exactly-once를 적용하는 방법을 API 흐름과 필요한 설정을 포함해 설명하라.",
+    "model_answer": "프로듀서에 transactional.id를 부여하고 initTransactions()로 초기화한 뒤, beginTransaction()으로 시작해 send()로 결과를 쓰고 sendOffsetsToTransaction()으로 컨슈머 오프셋까지 같은 트랜잭션에 담은 다음 commitTransaction()으로 원자적으로 확정한다. 실패 시 abortTransaction()을 호출한다. 컨슈머는 enable.auto.commit=false로 두고 오프셋 커밋을 트랜잭션에 위임하며, 다운스트림 컨슈머는 isolation.level=read_committed로 설정해 LSO까지의 커밋된 레코드만 읽게 한다. transactional.id는 인스턴스마다 안정적으로 같은 값을 재사용해야 하고, 재시작하면 producer epoch가 올라가 이전 좀비 인스턴스가 펜싱된다. 트랜잭션 상태는 __transaction_state 토픽에 저장되며 transaction.timeout.ms를 넘기면 자동 어보트된다. 대가는 커밋 마커와 어보트 필터링으로 인한 오버헤드, 그리고 트랜잭션 경계에 따른 지연 증가이며, 외부 시스템 쓰기는 이 보장 범위에 포함되지 않는다.",
+    "keywords": [
+      "transactional.id",
+      "sendOffsetsToTransaction",
+      "read_committed",
+      "__transaction_state",
+      "펜싱"
+    ],
+    "explanation": "오프셋 커밋을 트랜잭션에 포함시켜야 한다는 점, 다운스트림에서 read_committed가 필요하다는 점, transactional.id 안정성과 좀비 펜싱이 핵심이다."
+  },
+  {
+    "id": "kafka-sub-016",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "무중단 서비스를 유지하면서 Kafka 클러스터를 롤링 업그레이드하는 절차와, 사전에 반드시 확인해야 할 항목을 설명하라.",
+    "model_answer": "먼저 릴리스 노트에서 호환성 제약을 확인한다. Kafka 4.0은 KRaft만 지원하므로 ZooKeeper 모드라면 3.9 등에서 KRaft로 마이그레이션한 뒤 올려야 하고, 지원되는 클라이언트 최소 버전도 확인해야 한다. 업그레이드 전에 under-replicated partitions가 0이고 offline partitions가 없는지 확인하고, 롤백 계획과 설정 백업을 준비한다. 절차는 브로커를 한 대씩 내리고 새 버전으로 올린 뒤 ISR이 완전히 복구되는 것을 확인하고 다음 브로커로 넘어가는 것이다. controlled.shutdown.enable을 켜 두면 종료 전에 리더가 다른 브로커로 이동해 클라이언트 영향이 줄어든다. 모든 브로커가 새 버전이 된 뒤에 마지막 단계로 metadata.version(KRaft에서는 kafka-features 도구, 구버전에서는 inter.broker.protocol.version)을 올려 새 기능을 활성화한다. 이 순서를 지켜야 롤백이 가능하다. 또한 모든 토픽이 replication.factor 2 이상이고 min.insync.replicas가 브로커 한 대 이탈을 견디도록 설정되어 있어야 쓰기가 끊기지 않는다.",
+    "keywords": [
+      "under-replicated partitions",
+      "controlled.shutdown",
+      "metadata.version",
+      "ISR",
+      "KRaft"
+    ],
+    "explanation": "브로커 바이너리를 먼저 올리고 프로토콜/메타데이터 버전은 마지막에 올린다는 순서, 그리고 롤링 중 무손실을 위한 복제 설정 전제를 확인한다."
+  },
+  {
+    "id": "kafka-sub-017",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "재해 복구(DR)를 위해 두 리전에 Kafka를 두는 전략을 설명하고, MirrorMaker 2 기반 복제에서 주의할 점을 설명하라.",
+    "model_answer": "전략은 크게 리전을 걸치는 스트레치 클러스터와 리전별 독립 클러스터에 비동기 복제를 붙이는 방식으로 나뉜다. 스트레치 클러스터는 broker.rack과 랙 인지 복제로 리전 간에 복제본을 배치해 RPO를 0에 가깝게 만들 수 있지만, 리전 간 지연이 acks=all 쓰기 지연에 직접 반영되고 네트워크 분단에 취약하다. 리전별 클러스터를 MirrorMaker 2로 복제하면 쓰기 지연 영향은 작지만 비동기이므로 RPO가 0이 아니다. MirrorMaker 2에서는 대상 클러스터에서 토픽 이름에 소스 클러스터 별칭이 접두사로 붙는 리네이밍 정책, 컨슈머 그룹 재개 지점을 옮기기 위한 offset translation(MirrorCheckpointConnector와 checkpoints, heartbeats 내부 토픽), 양방향 복제 시 순환 복제를 막는 규칙을 확인해야 한다. 오프셋 값 자체는 클러스터 간에 동일하지 않으므로 페일오버 시 정확한 재개 지점 계산이 필요하고, 복제 자체가 최소 한 번 방식이라 중복이 생길 수 있으므로 소비 측 멱등성을 준비해야 한다. 페일오버와 페일백 절차를 정기적으로 훈련하는 것도 중요하다.",
+    "keywords": [
+      "MirrorMaker 2",
+      "offset translation",
+      "RPO",
+      "순환 복제",
+      "멱등"
+    ],
+    "explanation": "스트레치와 비동기 복제의 트레이드오프, 그리고 오프셋이 클러스터 간에 보존되지 않는다는 MirrorMaker 2의 핵심 함정을 짚는지 확인한다."
+  },
+  {
+    "id": "kafka-sub-018",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "KRaft 모드 클러스터의 컨트롤러 쿼럼을 운영할 때 알아야 할 사항과, ZooKeeper 기반 운영과 달라지는 점을 설명하라.",
+    "model_answer": "KRaft에서는 컨트롤러 노드들이 Raft 쿼럼을 이루고 클러스터 메타데이터를 __cluster_metadata 로그에 이벤트로 기록한다. 브로커는 이 로그를 옵저버로 복제해 로컬에 캐시하므로 컨트롤러 페일오버 시 메타데이터를 처음부터 다시 로드하지 않아 복구가 빠르고, 지원 가능한 파티션 수 확장성도 좋아진다. 쿼럼은 보통 3 또는 5개의 홀수 노드로 구성하고 과반이 살아 있어야 메타데이터 쓰기가 가능하며, 운영 환경에서는 combined 모드보다 전용 컨트롤러 노드를 두는 것이 권장된다. 3.9 이상에서는 KIP-853 동적 쿼럼을 지원해 controller.quorum.bootstrap.servers와 kafka-metadata-quorum 도구로 컨트롤러를 추가·제거할 수 있고, 새 컨트롤러는 먼저 옵저버로 로그를 따라잡은 뒤 투표자로 합류한다. ZooKeeper 시절과 달리 별도 앙상블 운영과 znode·세션 관리가 사라지는 대신, metadata.version 기능 레벨 관리와 메타데이터 로그 스냅샷·디스크 관리, 쿼럼 지연 모니터링이 중요해진다. 4.0부터 ZooKeeper 모드가 제거되었으므로 마이그레이션은 선택이 아니라 필수다.",
+    "keywords": [
+      "__cluster_metadata",
+      "쿼럼",
+      "전용 컨트롤러",
+      "metadata.version"
+    ],
+    "explanation": "KRaft의 메타데이터 전파 방식(브로커가 옵저버로 복제), 쿼럼 과반 요건, 동적 쿼럼과 metadata.version 운영 포인트를 확인한다."
+  },
+  {
+    "id": "kafka-sub-019",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "특정 브로커의 디스크 사용률만 90%를 넘고 그 브로커가 담당한 파티션의 지연이 커지고 있다. 원인 분석과 조치 방법을 단계적으로 설명하라.",
+    "model_answer": "먼저 kafka-log-dirs.sh로 브로커별, 파티션별 로그 크기를 확인해 편중이 파티션 배치 불균형 때문인지 특정 토픽의 리텐션 설정 때문인지 구분한다. 리더가 한 브로커에 몰려 있으면 kafka-leader-election.sh로 preferred leader election을 수행하고 auto.leader.rebalance.enable 상태를 확인한다. 배치 자체가 불균형하면 kafka-reassign-partitions.sh로 파티션을 다른 브로커로 재배치하는데, 이때 반드시 throttle을 지정해 복제 트래픽이 정상 트래픽과 페이지 캐시를 잡아먹지 않게 한다. 즉시 공간을 확보해야 하면 큰 토픽의 retention.ms나 retention.bytes를 임시로 낮추고 segment.ms를 조정해 세그먼트 롤링과 삭제를 유도한다. 근본 원인이 키 편향으로 인한 핫 파티션이면 파티션 키 설계를 바꾸거나 파티션 수를 늘려야 하며, 장기적으로는 계층형 스토리지로 오래된 세그먼트를 객체 스토리지로 내리거나 브로커를 증설하는 방안을 검토한다.",
+    "keywords": [
+      "kafka-log-dirs",
+      "kafka-reassign-partitions",
+      "throttle",
+      "핫 파티션",
+      "retention.bytes"
+    ],
+    "explanation": "재배치 시 throttle을 반드시 걸어야 한다는 실무 감각과, 리더 편중과 데이터 편중을 구분해 진단하는 순서를 평가한다."
+  },
+  {
+    "id": "kafka-sub-020",
+    "category": "kafka",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "여러 팀이 하나의 공용 Kafka 클러스터를 사용하는 환경에서, 특정 팀의 트래픽이 다른 팀에 영향을 주지 않게 하려면 어떤 장치를 마련해야 하는지 설명하라.",
+    "model_answer": "첫째, 클라이언트 쿼터를 설정한다. user 또는 client.id 단위로 producer_byte_rate, consumer_byte_rate, request_percentage를 지정하면 브로커가 응답을 지연시키는 스로틀링으로 특정 팀이 대역폭이나 브로커 요청 처리 시간을 독점하지 못하게 막는다. 둘째, 인증과 인가를 분리한다. SASL/SCRAM이나 mTLS로 주체를 식별하고 ACL로 팀별 토픽 접두사에만 읽기와 쓰기 권한을 부여하며, auto.create.topics.enable=false로 두어 임의 토픽 생성을 막고 생성은 승인 절차를 거치게 한다. 셋째, 토픽 네이밍 규칙과 파티션 수, 리텐션, 복제 팩터 상한 가이드를 정해 파티션과 디스크 남용을 방지한다. 넷째, 팀별 처리량과 lag, 쿼터 스로틀 지표를 모니터링해 영향도를 조기에 감지한다. 그럼에도 워크로드 특성이 크게 다르거나 규제 요건이 있으면 별도 클러스터로 물리적으로 분리하는 것이 가장 확실한 격리 수단이다.",
+    "keywords": [
+      "쿼터",
+      "producer_byte_rate",
+      "스로틀링",
+      "ACL",
+      "auto.create.topics.enable"
+    ],
+    "explanation": "쿼터로 자원 격리, ACL로 권한 격리, 가이드와 모니터링으로 운영 격리를 하고, 한계 시 클러스터 분리를 택하는 계층적 접근을 평가한다."
+  }
+]

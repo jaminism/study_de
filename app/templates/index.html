@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>데이터 엔지니어 면접 문제</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <p class="eyebrow">Data Engineer Interview</p>
+    <h1>면접 문제 풀이</h1>
+    <p class="lede">
+      {% if is_empty %}
+        문제 은행이 아직 생성되지 않았습니다.
+      {% else %}
+        {{ categories|length }}개 기술 카테고리 · 총 {{ total_questions }}문항
+      {% endif %}
+    </p>
+  </header>
+
+  {% if error %}
+    <div class="banner banner-error">{{ error }}</div>
+  {% endif %}
+
+  {% if is_empty %}
+    <div class="empty-state">
+      <h2>문제 은행이 아직 생성되지 않았습니다</h2>
+      <p>
+        <code>{{ questions_dir }}</code> 에서 문제 파일(<code>*.json</code>)을 찾지 못했습니다.
+      </p>
+      <p class="muted">
+        카테고리 전문가 에이전트로 문제 은행을 먼저 생성한 뒤 앱을 재시작하면
+        새 카테고리가 자동으로 목록에 나타납니다.
+      </p>
+    </div>
+  {% else %}
+
+    <form class="setup" method="get" action="{{ url_for('quiz') }}">
+      <h2 class="section-title">1. 카테고리 선택</h2>
+      <div class="grid" role="radiogroup" aria-label="카테고리">
+        <label class="cat-card cat-all">
+          <input type="radio" name="category" value="all" checked>
+          <span class="cat-body">
+            <span class="cat-name">전체 카테고리</span>
+            <span class="cat-total">{{ total_questions }}문항</span>
+            <span class="cat-meta">모든 기술에서 랜덤 출제</span>
+          </span>
+        </label>
+        {% for c in categories %}
+        <label class="cat-card">
+          <input type="radio" name="category" value="{{ c.id }}">
+          <span class="cat-body">
+            <span class="cat-name">{{ c.label }}</span>
+            <span class="cat-total">{{ c.total }}문항</span>
+            <span class="cat-meta">객관식 {{ c.mcq }} · 주관식 {{ c.subjective }}</span>
+            <span class="bar" aria-hidden="true">
+              {% for d in difficulties %}
+                {% if c.difficulty[d] %}
+                <span class="bar-seg seg-{{ d }}"
+                      style="flex:{{ c.difficulty[d] }}"
+                      title="{{ d }} {{ c.difficulty[d] }}문항"></span>
+                {% endif %}
+              {% endfor %}
+            </span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <h2 class="section-title">2. 출제 조건</h2>
+      <div class="options">
+        <label class="field">
+          <span>문제 유형</span>
+          <select name="type">
+            <option value="all">전체</option>
+            <option value="mcq">객관식</option>
+            <option value="subjective">주관식</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>난이도</span>
+          <select name="difficulty">
+            <option value="all">전체</option>
+            <option value="basic">basic</option>
+            <option value="intermediate">intermediate</option>
+            <option value="advanced">advanced</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>문항 수</span>
+          <select name="count">
+            <option value="5">5문항</option>
+            <option value="10" selected>10문항</option>
+            <option value="20">20문항</option>
+            <option value="30">30문항</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary">문제 풀기 시작</button>
+      </div>
+    </form>
+
+    <details class="legend">
+      <summary>난이도 색상 · 데이터 소스</summary>
+      <ul class="legend-list">
+        <li><span class="dot seg-basic"></span> basic</li>
+        <li><span class="dot seg-intermediate"></span> intermediate</li>
+        <li><span class="dot seg-advanced"></span> advanced</li>
+      </ul>
+      <p class="muted">
+        문제 은행: <code>{{ questions_dir }}</code> — 디렉토리를 스캔해 카테고리를 구성하므로,
+        새 <code>*.json</code> 파일을 추가하고 앱을 재시작하면 코드 수정 없이 반영됩니다.
+      </p>
+      {% if load_errors %}
+        <p class="muted"><strong>건너뛴 항목 {{ load_errors|length }}건</strong></p>
+        <ul class="legend-list errors">
+          {% for e in load_errors[:20] %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </details>
+
+  {% endif %}
+</div>
+</body>
+</html>

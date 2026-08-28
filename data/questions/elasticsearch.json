@@ -1,0 +1,317 @@
+[
+  {
+    "id": "elasticsearch-mcq-001",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "동적 매핑으로 색인된 문자열 필드 `country`에 대해 terms 집계를 실행했더니 \"Fielddata is disabled on [country]\" 오류가 발생했다. 원인으로 가장 정확한 것은?",
+    "choices": [
+      "집계 대상 필드는 반드시 인덱스 생성 시 aggregatable 옵션을 켜야 하는데 누락되었다",
+      "샤드 수가 부족해 집계 버킷을 생성할 메모리가 확보되지 않았다",
+      "`country`가 text 타입으로 매핑되어 애널라이즈되었고, text 필드는 doc_values가 없어 집계에 바로 쓸 수 없다",
+      "`country` 필드의 카디널리티가 너무 높아 terms 집계가 자동으로 차단되었다"
+    ],
+    "answer_index": 2,
+    "explanation": "ES 5.x 이후 동적 매핑은 문자열을 text 타입 + `.keyword` 서브필드로 매핑한다. text는 애널라이즈되어 역색인에만 들어가고 doc_values가 없어 집계/정렬에 부적합하며, fielddata(힙 상주 구조)를 명시적으로 켜야만 가능하다. 정답은 `country.keyword`로 집계하는 것이다. 1번은 존재하지 않는 옵션이고(aggregatable은 필드 타입에서 파생되는 속성일 뿐), 2번은 실제로는 circuit breaker 오류로 나타나며, 4번의 고카디널리티는 성능 문제일 뿐 이 오류 메시지의 원인이 아니다."
+  },
+  {
+    "id": "elasticsearch-mcq-002",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "운영 중인 인덱스의 프라이머리 샤드 수를 늘리려 한다. ElasticSearch의 동작으로 옳은 것은?",
+    "choices": [
+      "`number_of_shards`는 동적 설정이므로 `_settings` API로 즉시 변경된다",
+      "프라이머리 샤드 수는 생성 시 고정이며, `_split` API나 reindex로 새 인덱스를 만들어야 한다",
+      "레플리카 수를 늘리면 프라이머리 샤드도 함께 자동으로 분할된다",
+      "클러스터를 롤링 재시작하면 설정한 샤드 수로 자동 재분배된다"
+    ],
+    "answer_index": 1,
+    "explanation": "문서의 라우팅은 `shard = hash(_routing) % number_of_primary_shards`로 결정되므로 프라이머리 샤드 수가 바뀌면 기존 문서의 위치 계산이 깨진다. 따라서 생성 후 변경이 불가능하고, `_split`(배수로 증가), `_shrink`(약수로 감소), reindex로만 바꿀 수 있다. 반면 `number_of_replicas`는 동적 설정이라 언제든 변경 가능하다 — 이 둘을 혼동하는 것이 전형적인 함정이다."
+  },
+  {
+    "id": "elasticsearch-mcq-003",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "`bool` 쿼리에서 `must` 절 대신 `filter` 절을 사용했을 때 기대할 수 있는 효과로 옳은 것은?",
+    "choices": [
+      "정확도가 높아져 더 관련성 있는 문서가 상위에 노출된다",
+      "샤드 간 네트워크 전송량이 줄어 딥 페이징 비용이 사라진다",
+      "매칭되지 않는 문서도 낮은 스코어로 결과에 포함된다",
+      "스코어를 계산하지 않고 결과를 노드 쿼리 캐시에 재사용할 수 있어 반복 조회가 빨라진다"
+    ],
+    "answer_index": 3,
+    "explanation": "filter 컨텍스트는 \"매칭되는가(yes/no)\"만 판단하므로 BM25 스코어 계산을 건너뛰고, 자주 쓰이는 필터는 노드 쿼리 캐시(비트셋)에 캐시되어 재사용된다. 날짜 범위, 상태값, 태그 같은 이분법적 조건은 filter로 보내는 것이 정석이다. 1번은 오히려 must/should의 특성이고, 2번의 딥 페이징 비용은 filter와 무관하며, 3번은 ElasticSearch의 동작이 아니다."
+  },
+  {
+    "id": "elasticsearch-mcq-004",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "문서를 인덱싱한 직후 검색했는데 결과에 나오지 않다가 잠시 후 조회된다. 이 현상에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "레플리카 동기화가 비동기라서 프라이머리에만 반영된 상태이며, 레플리카 수를 0으로 하면 즉시 검색된다",
+      "인메모리 버퍼가 refresh 주기(기본 1초)마다 세그먼트로 flush되어야 검색 가능해지는 near real-time 특성이다",
+      "트랜스로그가 디스크에 fsync되기 전까지는 문서가 존재하지 않기 때문이다",
+      "세그먼트 병합(merge)이 완료되어야만 문서가 역색인에 등록되기 때문이다"
+    ],
+    "answer_index": 1,
+    "explanation": "ElasticSearch는 real-time이 아니라 near real-time이다. 색인된 문서는 인메모리 버퍼에 있다가 refresh(기본 `index.refresh_interval: 1s`) 시점에 검색 가능한 세그먼트가 된다. 즉시 필요하면 `?refresh=wait_for`를 쓰되 처리량을 해친다. 참고로 `GET /index/_doc/{id}`(단건 조회)는 트랜스로그를 읽어 refresh 전에도 최신값을 반환한다. 3번의 트랜스로그 fsync는 내구성(durability) 문제이지 가시성 문제가 아니며, 4번의 병합은 세그먼트 정리 작업으로 검색 가시성과 무관하다."
+  },
+  {
+    "id": "elasticsearch-mcq-005",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "애플리케이션 로그를 동적 매핑으로 색인하던 중 \"Limit of total fields [1000] in index [logs-2026.08] has been exceeded\" 오류가 발생했다. 가장 바람직한 대응은?",
+    "choices": [
+      "키가 가변적인 구간을 `flattened` 타입으로 매핑하거나 `dynamic: strict`/`false`로 스키마를 통제한다",
+      "`index.mapping.total_fields.limit`을 100000으로 올려 근본적으로 재발을 막는다",
+      "샤드 수를 늘려 인덱스당 필드 부담을 샤드에 분산시킨다",
+      "해당 인덱스의 레플리카를 0으로 낮춰 매핑 메타데이터 복제 비용을 줄인다"
+    ],
+    "answer_index": 0,
+    "explanation": "매핑 폭발(mapping explosion)의 근본 원인은 통제되지 않은 동적 매핑이다. 사용자 정의 키가 무한히 늘어나는 구간은 `flattened` 타입으로 묶어 필드 1개로 처리하거나, `dynamic: strict`(오류 발생)/`dynamic: false`(색인은 되나 매핑 미생성)로 스키마를 고정해야 한다. 2번처럼 한계값만 올리면 클러스터 상태(cluster state)가 비대해져 마스터 노드 부하, JVM 메모리 압박, 노드 재시작 지연으로 이어져 장애를 뒤로 미룰 뿐이다. 매핑은 인덱스 단위 메타데이터라 3번의 샤드 분산은 효과가 없고, 4번도 무관하다."
+  },
+  {
+    "id": "elasticsearch-mcq-006",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "수천만 건의 검색 결과를 배치로 전량 추출해야 한다. 최신 버전 기준 권장 방식과 그 이유로 옳은 것은?",
+    "choices": [
+      "`from`/`size`로 페이지를 넘긴다 — 코디네이팅 노드가 페이지 단위로만 메모리를 쓰므로 가장 가볍다",
+      "`index.max_result_window`를 1000만으로 올려 한 번에 조회한다",
+      "PIT(Point In Time)와 `search_after`를 조합한다 — 일관된 스냅샷을 유지하면서 정렬값 커서로 넘어가 딥 페이징 비용이 없다",
+      "Scroll API가 유일한 방법이며 최신 버전에서도 대량 추출의 표준 권장 방식이다"
+    ],
+    "answer_index": 2,
+    "explanation": "`from`/`size`는 모든 샤드가 `from + size`개를 정렬해 코디네이팅 노드로 보내고 대부분을 버리므로 깊어질수록 비용이 폭증하며, `index.max_result_window`(기본 10000)로 막혀 있다 — 이 값을 올리는 것은 OOM으로 가는 지름길이다. Scroll은 검색 컨텍스트가 오래된 세그먼트를 붙잡아 병합·디스크 회수를 방해하므로 검색 용도로는 비권장이 되었고, 현재 권장은 PIT + `search_after`다. Scroll은 여전히 존재하지만 reindex 같은 내부 작업 위주로 남았다."
+  },
+  {
+    "id": "elasticsearch-mcq-007",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "BM25가 기본 스코어링 알고리즘으로 채택된 이유를 TF-IDF와 비교해 가장 정확히 설명한 것은?",
+    "choices": [
+      "IDF를 사용하지 않아 희소 용어에 대한 편향이 제거되었다",
+      "문서 길이를 무시하므로 긴 문서와 짧은 문서를 공평하게 취급한다",
+      "역색인 대신 doc_values를 사용해 스코어를 계산하므로 더 빠르다",
+      "TF가 선형으로 증가하지 않고 k1 파라미터로 포화(saturation)되며, b 파라미터로 문서 길이 정규화 강도를 조절할 수 있다"
+    ],
+    "answer_index": 3,
+    "explanation": "BM25는 TF가 커져도 스코어가 무한정 늘지 않도록 k1으로 포화시키고(같은 단어가 100번 나온다고 10번 나온 문서보다 10배 관련성이 높지는 않다), b(기본 0.75)로 평균 문서 길이 대비 정규화 강도를 조절한다. IDF는 BM25도 사용하므로 1번은 틀리고, 2번은 오히려 정반대(길이 정규화를 명시적으로 수행)다. 3번은 스코어링과 무관한 저장 구조 이야기다."
+  },
+  {
+    "id": "elasticsearch-mcq-008",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "일별 로그 인덱스를 ILM으로 운영할 때, warm 단계에서 흔히 수행하는 액션 조합으로 가장 적절한 것은?",
+    "choices": [
+      "rollover + set_priority — 쓰기 대상을 warm 노드로 옮겨 hot 노드 부하를 낮춘다",
+      "read-only + shrink + forcemerge — 더 이상 쓰지 않는 인덱스를 샤드/세그먼트 단위로 압축해 조회 효율을 높인다",
+      "delete + snapshot — 원본을 지우고 스냅샷만 남겨 저장 비용을 줄인다",
+      "레플리카 수를 늘려 warm 노드에서의 조회 병렬성을 확보한다"
+    ],
+    "answer_index": 1,
+    "explanation": "rollover는 hot 단계에서만 유효한 액션이다(쓰기 중인 인덱스에만 의미가 있으므로 1번은 틀림). warm 단계는 쓰기가 끝난 인덱스를 대상으로 read-only 전환 → shrink(샤드 수 축소) → forcemerge(세그먼트 1개로 병합)를 수행해 샤드/세그먼트 오버헤드와 힙 사용량을 줄인다. forcemerge는 비용이 크므로 반드시 쓰기가 끝난 인덱스에만 적용해야 한다. 3번의 delete는 delete 단계 액션이고, 4번은 오히려 저장 비용을 늘려 warm 단계 목적과 반대다."
+  },
+  {
+    "id": "elasticsearch-mcq-009",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "`{\"users\": [{\"name\": \"kim\", \"age\": 30}, {\"name\": \"lee\", \"age\": 40}]}` 문서를 기본 object 매핑으로 색인한 뒤 `users.name=kim AND users.age=40`으로 검색하니 이 문서가 매칭되었다. 원인과 해결책으로 옳은 것은?",
+    "choices": [
+      "object 배열은 내부적으로 평탄화되어 `users.name:[kim,lee]`, `users.age:[30,40]`로 저장되므로 객체 간 경계가 사라진다 — `nested` 타입과 `nested` 쿼리를 써야 한다",
+      "동적 매핑이 배열을 인식하지 못해 생긴 버그이며, 배열 필드에 `index: true`를 명시하면 해결된다",
+      "`bool` 쿼리 대신 `dis_max` 쿼리를 쓰면 객체 단위 매칭이 보장된다",
+      "`copy_to`로 두 필드를 하나로 합치면 객체 경계가 유지된다"
+    ],
+    "answer_index": 0,
+    "explanation": "Lucene은 평면 문서 구조만 알기 때문에 object 배열은 필드별 값 배열로 평탄화되고, 서로 다른 객체의 속성이 교차 매칭되는 false positive가 발생한다. `nested` 타입은 각 객체를 숨겨진 별도 Lucene 문서로 색인해 경계를 보존하지만, 색인/조회 비용과 문서 수 증가(`index.mapping.nested_objects.limit`)라는 대가가 있어 남용하면 안 된다. 배열 원소가 많고 관계 질의가 드물다면 비정규화나 join 필드 등 대안을 검토한다."
+  },
+  {
+    "id": "elasticsearch-mcq-010",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "일 10GB 수준의 로그를 인덱스당 프라이머리 샤드 20개, 일별 인덱스로 1년간 운영해 총 샤드가 1만 개를 넘겼다. 나타날 가능성이 가장 높은 증상과 원인은?",
+    "choices": [
+      "샤드가 많아 쿼리 병렬성이 극대화되므로 검색 지연은 오히려 줄고 색인만 느려진다",
+      "레플리카가 자동으로 축소되어 데이터 유실 위험이 생긴다",
+      "세그먼트 병합이 멈춰 디스크 사용량이 선형으로 증가한다",
+      "클러스터 상태(cluster state)와 샤드 메타데이터가 비대해져 마스터 노드 부하·힙 압박이 커지고, 검색마다 수천 개 샤드 태스크가 뜨면서 지연이 급증한다"
+    ],
+    "answer_index": 3,
+    "explanation": "일 10GB면 프라이머리 샤드 1개(권장 크기 10~50GB)로 충분한데 20개를 잡아 샤드당 500MB짜리 과도한 샤딩(over-sharding)이 되었다. 샤드는 각각 Lucene 인덱스이자 힙을 점유하는 자원이므로, 노드 힙 1GB당 샤드 20개 미만이라는 경험칙을 넘기면 클러스터 상태 전파, 샤드 할당, 검색 태스크 스케줄링 오버헤드가 지배적이 된다. 해결책은 데이터 스트림 + ILM 롤오버(크기/기간 기준)로 샤드 크기를 정규화하고 shrink/rollup으로 과거 샤드를 정리하는 것이다. 1번은 샤드가 많을수록 빠르다는 흔한 오해다."
+  },
+  {
+    "id": "elasticsearch-sub-001",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "여러 마이크로서비스가 JSON 로그를 하나의 인덱스에 보내는 환경에서 매핑 폭발(mapping explosion)이 왜 발생하며, 어떤 증상으로 드러나고 어떻게 예방·복구하는지 설명하라.",
+    "model_answer": "원인은 통제되지 않은 동적 매핑이다. 서비스마다 서로 다른 JSON 키(특히 사용자 정의 컨텍스트, 에러 페이로드, `metrics.<동적키>` 형태)를 보내면 필드가 무한히 늘어나 `index.mapping.total_fields.limit`(기본 1000)을 초과하고, 색인 요청이 거부된다. 증상은 색인 실패 외에도 클러스터 상태 비대화로 인한 마스터 노드 CPU/힙 압박, 노드 재시작·샤드 할당 지연, Kibana 필드 목록 로딩 지연 등이 있다. 예방책은 (1) 인덱스 템플릿에 `dynamic: strict` 또는 `dynamic: false`를 적용해 스키마를 고정, (2) 가변 키 구간은 `flattened` 타입으로 필드 1개에 담기, (3) dynamic_templates로 문자열 기본 매핑을 keyword로 고정하고 불필요한 서브필드 제거, (4) ECS 같은 공통 로그 스키마를 강제하고 파이프라인(Logstash/Ingest pipeline)에서 비규격 키를 정규화하는 것이다. 이미 터진 경우에는 한계값을 임시로 소폭 올려 인입을 살린 뒤, 올바른 템플릿으로 새 인덱스를 만들고 reindex로 이관한 다음 롤오버로 전환하는 것이 정석이다. 한계값만 계속 올리는 것은 근본 해결이 아니다.",
+    "keywords": ["동적 매핑", "index.mapping.total_fields.limit", "flattened", "dynamic: strict", "클러스터 상태"],
+    "explanation": "매핑은 인덱스 메타데이터로 클러스터 상태에 실려 모든 노드에 전파되므로, 필드 수 증가는 단일 인덱스 문제가 아니라 클러스터 전체의 안정성 문제가 된다는 점을 짚어야 좋은 답변이다."
+  },
+  {
+    "id": "elasticsearch-sub-002",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "특정 검색 API의 p99 응답시간이 갑자기 3초로 늘어났다. 어떤 순서로 원인을 진단하고 무엇을 개선하겠는가?",
+    "model_answer": "진단은 위에서 아래로 좁혀 간다. (1) `_cat/nodes`, `_nodes/stats`로 노드 CPU·힙·GC 시간·디스크 IO를 확인해 클러스터 차원 문제인지 특정 쿼리 문제인지 가른다. (2) `_cat/thread_pool`의 search queue 길이와 thread_pool rejected 카운터로 큐잉·거절 여부를 본다. (3) slow log(`index.search.slowlog.threshold.query.warn`)를 켜서 느린 쿼리 패턴을 수집하고, `_search?profile=true` 또는 Profile API로 어떤 쿼리 절/집계가 시간을 쓰는지 분해한다. (4) `_cat/shards`로 과도한 샤드 수, 특정 노드에 쏠린 샤드 hot spot(편중된 샤드 배치), 비정상 세그먼트 수를 확인한다. 개선책으로는 이분법적 조건을 query에서 filter 컨텍스트로 옮겨 캐시를 활용하고, wildcard/leading wildcard·script 쿼리·고카디널리티 terms 집계를 제거하거나 사전 계산(transform, rollup)으로 대체하며, 딥 페이징은 search_after로 바꾸고, 정렬/집계 필드는 keyword + doc_values로 매핑한다. 인프라 차원에서는 레플리카 추가로 검색 병렬성 확보, ILM 기반 샤드 크기 정규화, 자주 조회하는 필터의 캐시 히트율 확인이 뒤따른다.",
+    "keywords": ["slow log", "Profile API", "filter 컨텍스트", "thread_pool rejected", "샤드 hot spot"],
+    "explanation": "\"쿼리를 최적화한다\"는 추상적 답변보다 slow log → Profile API → 샤드/노드 지표라는 구체적 진단 경로를 제시하는지가 변별점이다."
+  },
+  {
+    "id": "elasticsearch-sub-003",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "수억 건 규모의 초기 데이터 적재(bulk indexing)를 최대한 빠르게 끝내야 한다. 어떤 설정과 전략을 적용하겠으며, 각각의 리스크는 무엇인가?",
+    "model_answer": "적재 구간에 한해 다음을 적용한다. (1) `index.refresh_interval`을 `-1`로 두어 세그먼트 생성 빈도를 낮춘다 — 적재 중 검색이 불가능해지므로 완료 후 원복이 필수다. (2) `number_of_replicas`를 0으로 낮춰 복제 쓰기 비용을 없애고 적재 후 되돌린다 — 그동안 노드 장애 시 데이터 유실 위험이 있으므로 재적재 가능한 원본이 있을 때만 쓴다. (3) Bulk API를 사용하되 요청당 5~15MB 수준으로 크기를 맞추고, 클라이언트를 여러 스레드/프로세스로 병렬화해 bulk 스레드풀이 rejected를 낼 때까지 올려 본다. (4) 문서 ID를 지정하지 않고 자동 생성 ID를 쓰면 기존 문서 존재 여부 확인을 건너뛰어 빨라진다. (5) 적재 대상 인덱스의 프라이머리 샤드를 데이터 노드 수에 맞게 분산해 쓰기 병렬성을 확보한다. (6) 필요 없는 필드는 `index: false`, `doc_values: false`, `_source` 필터링 등으로 색인 비용을 줄인다. (7) `index.translog.durability`를 `async`로 두면 fsync 비용을 줄이지만 노드 크래시 시 마지막 구간이 유실될 수 있다. 적재 완료 후에는 refresh_interval·replica 원복, forcemerge로 세그먼트를 정리한다.",
+    "keywords": ["refresh_interval", "number_of_replicas", "Bulk API", "translog.durability", "forcemerge"],
+    "explanation": "각 튜닝이 내구성·가시성과 맞바꾸는 트레이드오프임을 인지하고 적재 종료 후 원복 절차까지 말하는지가 실무 판단력의 지표다."
+  },
+  {
+    "id": "elasticsearch-sub-004",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "일 500GB의 로그를 13개월 보관해야 하고, 최근 7일은 즉시 조회, 이후는 지연을 감수할 수 있다. 데이터 스트림과 ILM을 활용한 티어 설계와 비용 절감 방안을 설명하라.",
+    "model_answer": "데이터 스트림(`logs-*`)과 인덱스 템플릿을 만들고, 데이터 스트림의 쓰기 인덱스를 넘기는 ILM 롤오버를 축으로 ILM 정책을 4단계로 구성한다. hot 단계는 SSD 기반 hot 노드에서 쓰기를 받고, ILM 롤오버 조건은 프라이머리 샤드 50GB 또는 1일로 잡아 샤드 크기를 10~50GB 범위로 정규화한다(일 500GB면 프라이머리 샤드 약 10개). 7일 후 warm으로 넘겨 read-only 전환, shrink로 샤드 수 축소, forcemerge로 세그먼트를 1개로 병합하고 레플리카를 1로 유지한다. 30일 이후 cold 단계에서는 searchable snapshot을 사용해 오브젝트 스토리지(S3 등)를 주 저장소로 삼고 로컬은 캐시로만 쓴다 — 레플리카를 사실상 0으로 줄일 수 있어 저장 비용이 크게 떨어진다. 90일 이후 frozen 티어로 내리면, frozen 티어의 부분 마운트(partial-) 인덱스가 쿼리 시에만 스냅샷에서 세그먼트를 가져오므로 저장 비용이 가장 낮은 대신 조회 지연이 수 배 늘어난다. 13개월 시점에 delete 액션으로 삭제한다. 추가 절감 수단으로는 원본 대신 집계 지표만 남기는 downsampling/transform, `_source` 압축 코덱(best_compression), 불필요 필드 제거, ECS 정규화로 필드 수 축소가 있다. 스냅샷 라이프사이클(SLM)로 백업을 분리해 삭제 정책과 복구 요구사항을 충돌시키지 않는 것도 중요하다.",
+    "keywords": ["데이터 스트림", "ILM 롤오버", "searchable snapshot", "frozen 티어", "downsampling"],
+    "explanation": "보관 기간·조회 지연 SLA·비용이라는 세 축을 티어에 매핑하고, 롤오버 기준을 샤드 크기(50GB)로 잡아 샤드 개수를 통제하는 설계를 제시하는 것이 핵심이다."
+  },
+  {
+    "id": "elasticsearch-sub-005",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "\"로그 분석 플랫폼을 ElasticSearch로 갈지 ClickHouse로 갈지\" 결정해야 한다. 두 시스템의 구조적 차이를 근거로 선택 기준을 제시하라.",
+    "model_answer": "ElasticSearch는 역색인 기반 검색 엔진으로, 텍스트 토큰 단위 매칭·릴러번스 랭킹·임의 필드 조건의 저지연 필터링에 강하다. 문서 단위 저장과 `_source` 보관으로 저장 증폭이 크고, 고카디널리티 대량 집계나 대규모 스캔·조인은 상대적으로 비싸다. ClickHouse는 컬럼 지향 MergeTree 스토리지로 컬럼 압축률과 스캔 처리량이 뛰어나 대량 GROUP BY·시계열 집계·조인이 강하지만, full-text 검색(전문 검색)은 역색인 대신 스킵 인덱스·토큰 필터 수준이라 관련도 랭킹이 필요한 검색에는 부적합하다. 선택 기준은 (1) 주 워크로드가 '찾기(needle in haystack, 자유 텍스트 검색, 랭킹, 하이라이팅)'면 ElasticSearch, '집계하기(대량 스캔·지표 롤업·애드혹 SQL 분석)'면 ClickHouse, (2) 사용자가 Kibana의 Discover/대시보드 기반 탐색을 원하는지 vs SQL과 BI 도구 연동을 원하는지, (3) 저장 압축률과 보관 기간 — 저장 압축률이 높아 장기 보관 비용이 싸야 한다면 ClickHouse가 유리, (4) 운영 부담 — 클러스터 상태·샤드 관리 vs 파티션·머지 트리 관리, (5) 실시간성 — ES는 near real-time 검색, ClickHouse는 배치성 삽입에 최적화. 실무에서는 최근 데이터는 ElasticSearch에서 검색·트러블슈팅하고, 장기 데이터와 지표 집계는 ClickHouse로 내려 보내는 하이브리드 구성도 흔하다.",
+    "keywords": ["역색인", "컬럼 지향", "full-text 검색", "대량 집계", "저장 압축률"],
+    "explanation": "\"둘 다 빠르다\" 수준이 아니라 저장 구조(역색인 vs 컬럼 스토어)에서 워크로드 적합성을 도출하고, 하이브리드 구성까지 제시하면 우수한 답변이다."
+  },
+  {
+    "id": "elasticsearch-mcq-011",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "ElasticSearch의 refresh와 flush의 차이를 가장 정확히 설명한 것은?",
+    "choices": [
+      "refresh는 인메모리 버퍼를 검색 가능한 세그먼트로 만드는 작업이고, flush는 트랜스로그를 비우며 Lucene commit으로 세그먼트를 디스크에 영속화하는 작업이다",
+      "refresh는 디스크 fsync를 동반하고, flush는 메모리에서만 일어나는 가벼운 작업이다",
+      "refresh는 프라이머리 샤드에서만, flush는 레플리카 샤드에서만 수행된다",
+      "둘은 같은 작업의 다른 이름이며, refresh는 사용자 API·flush는 내부 명칭일 뿐이다"
+    ],
+    "answer_index": 0,
+    "explanation": "refresh는 가시성(visibility) 작업이다 — 인메모리 버퍼의 문서를 새 세그먼트로 만들어 검색 가능하게 하지만, 이 세그먼트는 아직 OS 파일 시스템 캐시에 있을 뿐 디스크에 확정된 것은 아니다. 내구성(durability)은 트랜스로그가 담당하며(기본 `index.translog.durability: request` — 요청마다 fsync), flush 시점에 Lucene commit이 일어나 세그먼트가 디스크에 영속화되고 트랜스로그가 비워진다. 즉 \"refresh = 검색 가능해짐\", \"flush = 안전하게 저장됨\"으로 구분된다. 2번은 두 개념을 정반대로 뒤집은 전형적인 오답이고, 3번·4번은 사실이 아니다."
+  },
+  {
+    "id": "elasticsearch-mcq-012",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "무거운 집계 쿼리가 몰릴 때마다 클러스터가 불안정해지고 마스터가 자주 교체된다. 노드 역할(node roles) 관점의 대응으로 가장 적절한 것은?",
+    "choices": [
+      "모든 노드에 master·data·ingest 역할을 전부 부여해 어느 노드든 마스터가 될 수 있게 하여 가용성을 높인다",
+      "마스터 후보 노드를 2대로 줄여 선출 시간을 단축한다",
+      "데이터를 갖지 않는 전용 마스터 노드 3대를 분리하고, 필요하면 코디네이팅 전용 노드를 두어 집계 취합 부하를 데이터 노드에서 떼어낸다",
+      "데이터 노드의 힙을 64GB 이상으로 올려 집계 메모리를 충분히 확보한다"
+    ],
+    "answer_index": 2,
+    "explanation": "마스터는 클러스터 상태 관리·샤드 할당이라는 가벼우나 절대 멈추면 안 되는 일을 한다. 데이터 노드와 겸직시키면 무거운 집계로 인한 GC 정지가 마스터 응답 지연 → 마스터 교체 → 샤드 재할당이라는 연쇄 장애를 부른다. 따라서 전용 마스터 3대(과반수 2로 split-brain 방지)를 분리하고, 결과 취합(reduce)과 클라이언트 접점은 `node.roles: []`인 코디네이팅 전용 노드로 뺀다. 2번의 마스터 후보 2대는 과반수가 2가 되어 1대만 죽어도 클러스터가 멈추므로 최악의 구성이고, 4번은 32GB 근처를 넘기면 compressed oops가 비활성화되어 오히려 힙 효율이 떨어진다(힙은 물리 메모리의 절반, 최대 ~31GB 권장)."
+  },
+  {
+    "id": "elasticsearch-mcq-013",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "검색 자동완성에 `fuzziness: AUTO`를 적용했더니 인덱스가 커질수록 응답이 급격히 느려졌다. 원인과 완화책으로 가장 정확한 것은?",
+    "choices": [
+      "퍼지 쿼리는 편집 거리 내 모든 변형을 term dictionary에서 열거하므로 고유 term 수에 비례해 비싸진다 — `prefix_length`를 1~2로 주고 `max_expansions`를 낮춰 후보를 줄인다",
+      "퍼지 쿼리는 doc_values를 스캔하므로 느리다 — 해당 필드에 `doc_values: false`를 주면 해결된다",
+      "AUTO는 항상 편집 거리 2를 쓰므로 느리다 — `fuzziness: 3`으로 올리면 자동완성 후보가 줄어 빨라진다",
+      "퍼지 쿼리 결과는 캐시되지 않아 느리다 — filter 컨텍스트로 옮기면 캐시되어 해결된다"
+    ],
+    "answer_index": 0,
+    "explanation": "퍼지 쿼리는 Levenshtein 오토마톤을 만들어 term dictionary를 훑으며 편집 거리 내 term을 열거한 뒤 각 term에 대해 정확 매칭을 수행한다. 따라서 비용이 문서 수보다 **고유 term 수**에 비례해 커진다. `prefix_length`(기본 0)를 1~2로 주면 앞글자가 고정되어 탐색 범위가 극적으로 줄고, `max_expansions`(기본 50)를 낮추면 확장 term 수가 제한된다. `fuzziness: AUTO`는 term 길이에 따라 0~2자 정확 일치·3~5자 1편집·6자 이상 2편집을 적용하는 것이지 항상 2가 아니며, 편집 거리를 3으로 올리면 후보가 늘어 더 느려진다(Lucene은 최대 2까지만 지원). 자동완성이 목적이라면 애초에 퍼지 대신 `search_as_you_type`·edge n-gram·completion suggester가 정석이다."
+  },
+  {
+    "id": "elasticsearch-mcq-014",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "대량 색인 중인 인덱스에서 검색 지연이 주기적으로 튀고, 그 순간 디스크 IO와 CPU가 함께 치솟는다. 세그먼트 병합(merge)이 원인일 때의 대응으로 가장 적절한 것은?",
+    "choices": [
+      "쓰기가 진행 중인 인덱스에 주기적으로 forcemerge를 걸어 세그먼트를 1개로 유지한다",
+      "`refresh_interval`을 1초 미만으로 낮춰 세그먼트를 더 자주, 더 작게 만들어 병합 부담을 분산한다",
+      "`refresh_interval`을 늘려 작은 세그먼트 생성 자체를 줄이고, 스토리지 특성에 맞게 `index.merge.scheduler.max_thread_count`를 조정하며, forcemerge는 쓰기가 끝난 인덱스에만 적용한다",
+      "레플리카를 늘려 병합 작업을 레플리카 샤드로 오프로드한다"
+    ],
+    "answer_index": 2,
+    "explanation": "병합 부하의 근원은 작은 세그먼트가 많이 생기는 것이고, 세그먼트는 refresh마다 생성되므로 `refresh_interval`을 30초 등으로 늘리는 것이 1차 처방이다. 병합 동시성은 `index.merge.scheduler.max_thread_count`로 조절하며, HDD처럼 랜덤 IO가 약한 스토리지에서는 1로 낮춰 IO 경합을 줄이는 것이 권장된다(SSD는 기본값 유지). forcemerge는 세그먼트를 통째로 다시 쓰는 매우 비싼 작업이라 **더 이상 쓰지 않는(read-only) 인덱스**에만 걸어야 하며, 쓰기 중인 인덱스에 걸면 거대 세그먼트가 남아 이후 병합이 더 악화되므로 1번은 정반대 처방이다. 레플리카는 프라이머리와 동일한 색인·병합을 각자 수행하므로 4번처럼 부하를 떠넘길 수 없고 오히려 총 IO가 늘어난다."
+  },
+  {
+    "id": "elasticsearch-mcq-015",
+    "category": "elasticsearch",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "데이터 노드를 한 대씩 재부팅하는 롤링 재시작을 수행할 때, 불필요한 샤드 재배치와 네트워크 폭주를 막기 위한 조치로 가장 적절한 것은?",
+    "choices": [
+      "재시작 전 해당 노드의 모든 인덱스를 close하고 재시작 후 open한다",
+      "재시작 전 `cluster.routing.allocation.enable`을 `primaries`(또는 `none`)로 바꾸고, 재시작 후 원복해 재할당을 재개한다",
+      "`number_of_replicas`를 0으로 낮춰 복제 트래픽을 없앤 뒤 재시작하고 나중에 되돌린다",
+      "클러스터를 read-only로 전환하면 샤드가 이동하지 않으므로 별도 설정이 필요 없다"
+    ],
+    "answer_index": 1,
+    "explanation": "노드가 잠깐 빠져도 ElasticSearch는 레플리카를 다른 노드에 복구하려 하는데, 곧 돌아올 노드 때문에 수십 GB를 복사했다가 되돌리는 낭비가 발생한다. 표준 절차는 재시작 전 `cluster.routing.allocation.enable: primaries`로 레플리카 할당을 멈추고, 인덱싱을 잠시 멈춰 flush(`_flush`)로 트랜스로그를 줄인 뒤 재시작하고, 노드 합류 후 설정을 `all`로 원복하는 것이다. 보조 수단으로 `index.unassigned.node_left.delayed_timeout`(기본 1m)을 늘려 복구를 지연시키고, `indices.recovery.max_bytes_per_sec`·`cluster.routing.allocation.node_concurrent_recoveries`로 재배치 대역폭을 제한한다. 3번은 그 시간 동안 데이터 이중화가 사라져 재시작 중 장애에 무방비가 되고, 1번·4번은 서비스 가용성을 통째로 희생하는 과도한 조치다."
+  },
+  {
+    "id": "elasticsearch-sub-006",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "같은 로그를 ElasticSearch와 ClickHouse에 이중 적재하는 하이브리드 구성에서, ES 쪽 저장 용량이 ClickHouse의 5~10배로 불어났다. ES 인덱스의 내부 구조 관점에서 원인을 설명하고, 검색 요구사항을 지키면서 ES 쪽을 슬림화할 방안을 제시하라.",
+    "model_answer": "원인은 ES가 하나의 필드를 여러 자료구조에 중복 저장하기 때문이다 — `_source` 원본 보관과 역색인 중복 저장, doc_values 컬럼 복제가 한 필드에 겹쳐 쌓인다. 구체적으로 (1) `_source`에 원본 JSON 전체를 보관하고, (2) 역색인(term dictionary + posting list)을 만들고, (3) 정렬·집계용 doc_values를 컬럼 형태로 또 만들며, (4) 동적 매핑이 문자열마다 `text` + `.keyword` 서브필드를 생성해 사실상 두 벌을 색인한다. 게다가 문서 단위 저장이라 컬럼 지향인 ClickHouse만큼 유사값이 모이지 않아 압축률이 낮고, 레플리카 1이면 그대로 2배가 된다. 슬림화는 필드별로 '이 필드에 무엇이 필요한가'를 되묻는 데서 출발한다. 검색만 필요한 필드는 `doc_values: false`, 필터·집계만 필요한 필드는 `index: false`, 아예 조회하지 않는 필드는 dynamic_templates로 색인 자체를 막는다. 문자열은 기본을 `keyword`로 고정해 불필요한 `text` 분석을 없애고(전문 검색이 필요한 message류만 text), 가변 키 구간은 `flattened`로 묶는다. 인덱스 레벨에서는 압축 코덱을 index.codec best_compression(설정으로는 `index.codec: best_compression`, DEFLATE)으로 지정해 저장을 줄이고, ILM 롤오버로 샤드 크기를 정규화한 뒤 warm 단계에서 forcemerge·shrink를 건다. ILM 보관 기간 분리, 즉 시스템별로 보관 정책 자체를 나누는 것이 가장 효과가 크다 — ES는 검색·트러블슈팅이 실제로 일어나는 최근 7~14일만 보관하고 장기 보관과 지표 집계는 ClickHouse에 맡기며, ES 장기 구간은 searchable snapshot으로 내린다. `_source` 비활성화나 synthetic `_source`는 용량을 크게 줄이지만 reindex·update·하이라이팅이 막히므로 요구사항을 확인한 뒤에만 선택한다.",
+    "keywords": ["_source", "doc_values", "역색인 중복 저장", "index.codec best_compression", "ILM 보관 기간 분리"],
+    "explanation": "\"ES가 원래 무겁다\"가 아니라 _source·역색인·doc_values·keyword 서브필드라는 네 겹의 중복 저장을 구조적으로 짚고, 필드 단위 취사선택과 보관 기간 분리라는 두 축으로 답하는지가 변별점이다."
+  },
+  {
+    "id": "elasticsearch-sub-007",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "한국어 상품명 검색에서 \"삼성노트북\"으로는 결과가 나오는데 \"삼성 노트북\"으로는 누락이 생긴다. 애널라이저 관점에서 원인을 진단하고 개선 방안과 배포 시 주의점을 설명하라.",
+    "model_answer": "원인은 대개 애널라이저 선택에 있다. 기본 `standard` 애널라이저는 공백·구두점 기준으로만 자르므로 한국어 복합어를 분해하지 못해 \"삼성노트북\"이 통째로 하나의 term이 되고, 질의어 \"삼성 노트북\"은 [삼성, 노트북] 두 term이 되어 어느 쪽도 매칭되지 않는다. 개선책은 형태소 분석기(nori) 도입이다. `nori_tokenizer`의 `decompound_mode`를 `mixed`로 두면 복합명사를 원형과 분해형 모두 색인해 양방향 매칭이 가능해지고, `nori_part_of_speech` 필터로 조사·어미를 제거하며 `nori_readingform`으로 한자를 한글로 정규화한다. 동의어(삼성=samsung)는 `synonym_graph` 필터를 **검색 시 애널라이저**에 두는 것이 일반적이다 — 색인 시에 넣으면 동의어를 바꿀 때마다 전체 재색인이 필요하기 때문이다. 색인 애널라이저와 `search_analyzer`를 분리해, 색인은 넓게(분해형 포함) 검색은 정밀하게 구성하는 것이 정석이다. 검증은 `_analyze` API로 실제 토큰 스트림을 확인하고, `_validate/query?explain`·Profile API로 질의가 어떤 term으로 풀리는지 본다. 배포 시 주의점은 **색인 애널라이저 변경은 기존 문서에 소급 적용되지 않는다**는 것이다. 매핑의 analyzer는 기존 필드에 대해 변경이 불가능하므로 새 인덱스를 만들어 reindex + alias 전환(reindex로 재색인한 뒤 alias를 무중단 스위칭) 절차를 밟아야 하며, 검색 시 애널라이저나 동의어 사전만 바꾸는 경우에도 인덱스 close/open 또는 reload API가 필요할 수 있다.",
+    "keywords": ["nori_tokenizer", "decompound_mode", "search_analyzer", "synonym_graph", "reindex + alias 전환"],
+    "explanation": "토크나이저 교체만 말하는 답변과, 색인/검색 애널라이저 분리·동의어 배치 전략·재색인 필요성까지 짚는 답변이 갈린다. `_analyze`로 검증한다는 실무 습관을 언급하면 가점이다."
+  },
+  {
+    "id": "elasticsearch-sub-008",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "클러스터 상태가 yellow에서 red로 바뀌었다. yellow와 red의 의미를 구분하고, 어떤 순서로 진단해 복구할지 설명하라.",
+    "model_answer": "yellow vs red의 차이는 프라이머리 샤드가 살아 있는지 여부에서 갈린다. green은 모든 프라이머리·레플리카 샤드가 할당된 상태, yellow는 모든 프라이머리는 살아 있으나 일부 레플리카가 미할당된 상태(데이터 유실 없음, 이중화만 깨짐), red는 프라이머리 샤드 중 일부가 미할당이라 해당 샤드의 데이터를 읽을 수 없고 그 샤드로 라우팅되는 색인도 실패하는 상태다. 즉 yellow는 가용성 저하, red는 데이터 접근 불가라는 질적 차이가 있다. 진단은 (1) `GET _cluster/health?level=indices`로 어느 인덱스가 red인지 좁히고, (2) `GET _cat/shards?v&h=index,shard,prirep,state,unassigned.reason`로 미할당 샤드와 사유(NODE_LEFT, ALLOCATION_FAILED, CLUSTER_RECOVERED, INDEX_CREATED 등)를 확인한 뒤, (3) 핵심 도구인 `GET _cluster/allocation/explain`으로 \"왜 이 샤드를 이 노드에 못 붙이는지\"에 대한 결정 근거(decider별 판정)를 읽는다. 흔한 원인은 노드 이탈, 디스크 워터마크(`flood_stage` 95%에서 인덱스가 read-only로 잠김), 샤드 할당 필터링/awareness 설정과 노드 구성 불일치, 데이터 파일 손상, `total_shards_per_node` 초과다. 복구는 사유별로 다르다 — 노드 이탈이면 노드를 복귀시키는 것이 최선이고, 디스크 문제면 공간을 확보한 뒤 read-only 블록(`index.blocks.read_only_allow_delete`)을 해제한다. 설정 충돌이면 필터링 규칙을 고치고, 일시적 실패로 재시도 한도를 소진했다면 `_cluster/reroute?retry_failed=true`로 재시도한다. `allocate_empty_primary`는 해당 샤드의 데이터를 영구히 버리는 최후 수단이므로 스냅샷 복구가 불가능함을 확인한 뒤에만 쓴다. 재발 방지로는 스냅샷(SLM) 정기 백업, 디스크 워터마크 모니터링, `delayed_timeout` 조정, 노드 재시작 절차 표준화가 있다.",
+    "keywords": ["yellow vs red", "_cluster/allocation/explain", "unassigned.reason", "디스크 워터마크", "allocate_empty_primary"],
+    "explanation": "\"레플리카가 없으면 yellow\" 수준을 넘어, allocation explain으로 decider 판정을 읽는 진단 경로와 데이터 유실을 감수하는 최후 수단의 위험성을 구분하는지가 핵심이다."
+  },
+  {
+    "id": "elasticsearch-sub-009",
+    "category": "elasticsearch",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "ElasticSearch가 문서를 어떻게 저장하고 검색하는지, 역색인의 구조를 중심으로 설명하라. 관계형 DB의 B-tree 인덱스로 `LIKE '%키워드%'`를 수행하는 것과 무엇이 다른가?",
+    "model_answer": "ElasticSearch는 문서를 그대로 훑는 대신 역색인(inverted index)이라는 자료구조를 미리 만들어 둔다. 색인 시점에 각 필드 값은 애널라이저를 거치는데, 애널라이저는 character filter → tokenizer → token filter 순으로 원문을 토큰(term)으로 자르고 소문자화·불용어 제거·어간 추출 같은 정규화를 수행한다. 이렇게 만들어진 term들이 사전 순으로 정렬되어 term dictionary에 들어가고, 각 term마다 그 term을 포함한 문서 ID 목록인 posting list가 붙는다. 검색 시에는 질의어도 동일한 애널라이저로 토큰화한 뒤 term dictionary에서 해당 term을 찾고, 연결된 posting list를 읽어 문서 집합을 얻는다. 여러 조건이 있으면 posting list 간 교집합/합집합 연산으로 결과를 좁히고, BM25로 관련도 점수를 매겨 정렬한다. 관계형 DB의 B-tree 인덱스는 컬럼 값 '전체'를 키로 정렬해 두므로 접두사 매칭(`LIKE '키워드%'`)에만 인덱스를 쓸 수 있고, 앞에 와일드카드가 붙는 `LIKE '%키워드%'`는 인덱스를 타지 못해 전체 테이블 스캔이 된다. 데이터가 커질수록 응답 시간이 선형으로 나빠지고, 어느 문서가 더 관련성이 높은지에 대한 순위 개념도 없다. 반면 역색인은 값을 term 단위로 쪼개 저장하므로 문장 중간에 있는 단어도 곧바로 조회되고, 데이터가 늘어도 조회 비용이 문서 수가 아니라 매칭되는 term 수에 좌우된다. 이것이 전문 검색(full-text search)에서 ElasticSearch가 유리한 구조적 이유다. 대신 색인 시점에 term을 만들어 두는 비용과 저장 공간이 들고, 애널라이저 설정을 바꾸면 기존 문서에 소급 적용되지 않아 재색인이 필요하다는 대가가 있다.",
+    "keywords": ["역색인", "애널라이저", "term dictionary", "posting list", "전문 검색"],
+    "explanation": "\"역색인은 단어로 문서를 찾는 것\"이라는 한 줄 정의를 넘어, 애널라이저가 term을 만들고 term dictionary와 posting list가 어떻게 연결되는지 구조를 말할 수 있는지가 기본기의 척도다. B-tree가 접두사 매칭까지만 커버한다는 대비까지 짚으면 좋은 답변이다."
+  }
+]

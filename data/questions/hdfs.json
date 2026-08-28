@@ -1,0 +1,232 @@
+[
+  {
+    "id": "hdfs-mcq-001",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "HDFS에서 NameNode와 DataNode의 역할을 바르게 설명한 것은?",
+    "choices": [
+      "NameNode와 DataNode 모두 데이터 블록의 복제본을 하나씩 나눠 저장한다",
+      "NameNode는 실제 데이터를 저장하고 DataNode는 메타데이터를 캐싱한다",
+      "NameNode는 파일 메타데이터와 블록 위치를 관리하고, DataNode는 실제 블록 데이터를 저장·제공한다",
+      "NameNode는 클라이언트의 모든 읽기·쓰기 데이터를 중계한다"
+    ],
+    "answer_index": 2,
+    "explanation": "NameNode는 네임스페이스(디렉터리 구조, 파일-블록 매핑, 권한)를 관리하고 어떤 블록이 어느 DataNode에 있는지 추적한다. 실제 데이터는 DataNode에만 있으며, 클라이언트는 NameNode에서 블록 위치를 받은 뒤 DataNode와 직접 데이터를 주고받는다. NameNode가 데이터 경로에 끼지 않는 이 설계가 처리량 확장의 열쇠다."
+  },
+  {
+    "id": "hdfs-mcq-002",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "HDFS 기본 블록 크기가 64MB~128MB처럼 일반 파일시스템보다 훨씬 크게 설정된 이유는?",
+    "choices": [
+      "탐색(seek) 시간 대비 전송 시간의 비중을 높여 대용량 순차 읽기 처리량을 극대화하고, 블록 메타데이터 수를 줄이기 위해",
+      "작은 파일을 더 많이 저장하기 위해",
+      "네트워크 패킷 크기와 정확히 일치시키기 위해",
+      "복제 계수를 자동으로 결정하기 위해"
+    ],
+    "answer_index": 0,
+    "explanation": "블록이 크면 디스크 탐색 오버헤드가 전체 전송 시간에서 차지하는 비중이 작아져 순차 스캔 처리량이 좋아진다. 또한 파일당 블록 수가 줄어 NameNode가 관리할 메타데이터가 감소한다. 반대급부로 블록보다 훨씬 작은 파일이 많으면 병렬도와 메타데이터 효율이 모두 나빠진다. HDFS는 마지막 블록에 남는 공간을 실제로 점유하지 않으므로 작은 파일이 디스크를 128MB씩 낭비하지는 않는다는 점도 자주 나오는 함정이다."
+  },
+  {
+    "id": "hdfs-mcq-003",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "복제 계수 3인 클러스터에서 기본 랙 어웨어니스 정책에 따른 블록 복제본 배치로 옳은 것은?",
+    "choices": [
+      "세 복제본을 모두 서로 다른 랙에 배치한다",
+      "첫 번째와 두 번째는 같은 노드, 세 번째만 다른 노드에 배치한다",
+      "세 복제본을 모두 같은 랙 안에 배치한다",
+      "첫 번째는 쓰기 클라이언트가 있는 노드(또는 임의 노드), 두 번째는 다른 랙의 노드, 세 번째는 두 번째와 같은 랙의 다른 노드에 배치한다"
+    ],
+    "answer_index": 3,
+    "explanation": "기본 정책은 한 노드에 복제본 하나, 한 랙에 복제본 두 개까지를 넘지 않으면서 최소 두 개 랙에 분산한다. 이렇게 하면 랙 스위치나 전원 장애로 랙 하나가 통째로 사라져도 데이터가 살아남고, 동시에 두 번째·세 번째 복제본을 같은 랙에 두어 랙 간 트래픽을 한 번으로 줄인다. '모두 다른 랙'은 내구성은 좋지만 쓰기 시 랙 간 대역폭 소모가 커져 채택되지 않았다."
+  },
+  {
+    "id": "hdfs-mcq-004",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "HDFS 파일 쓰기 파이프라인의 동작으로 옳은 것은?",
+    "choices": [
+      "클라이언트가 세 DataNode에 각각 병렬로 전체 데이터를 전송한다",
+      "클라이언트가 첫 DataNode에 패킷을 보내면 그 노드가 두 번째로, 두 번째가 세 번째로 릴레이하며, ACK는 역방향으로 전달된다",
+      "클라이언트가 NameNode에 데이터를 보내면 NameNode가 DataNode로 분배한다",
+      "복제는 쓰기가 끝난 뒤 백그라운드 배치 작업으로만 수행된다"
+    ],
+    "answer_index": 1,
+    "explanation": "HDFS 쓰기는 파이프라인 방식이다. 클라이언트는 NameNode에서 받은 DataNode 목록의 첫 노드에만 패킷을 보내고, 각 노드가 다음 노드로 릴레이하면서 동시에 로컬 디스크에 기록한다. ACK는 반대 방향으로 돌아온다. 이 구조는 클라이언트의 업링크 대역폭 병목을 피하고 랙 어웨어니스와 결합해 랙 간 전송을 최소화한다. 파이프라인 중간 노드가 죽으면 해당 노드를 제외하고 파이프라인을 재구성해 쓰기를 이어간다."
+  },
+  {
+    "id": "hdfs-mcq-005",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "NameNode의 fsimage와 edits(edit log)의 관계로 옳은 것은?",
+    "choices": [
+      "edits는 DataNode가 관리하고 fsimage는 NameNode가 관리한다",
+      "fsimage는 블록의 실제 데이터를 담고 edits는 접근 로그를 담는다",
+      "fsimage는 네임스페이스의 체크포인트 스냅샷이고, edits는 그 이후의 변경 저널이며, 주기적으로 병합해 새 fsimage를 만든다",
+      "재시작 시 fsimage만 읽고 edits는 폐기한다"
+    ],
+    "answer_index": 2,
+    "explanation": "NameNode는 메모리에 네임스페이스를 유지하면서 모든 변경을 edits에 append한다. fsimage는 특정 시점의 스냅샷이며, 재시작 시 fsimage를 로드한 뒤 edits를 재생해 최신 상태를 복원한다. 체크포인트를 하지 않아 edits가 비대해지면 NameNode 시작 시간이 극단적으로 길어지므로, 이를 병합해 주는 역할(구 Secondary NameNode, HA 구성에서는 Standby NameNode)이 정상 동작하는지 모니터링해야 한다. 블록 위치 정보는 이 파일들에 저장되지 않고 DataNode의 블록 리포트로 매번 재구성된다."
+  },
+  {
+    "id": "hdfs-mcq-006",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "HDFS NameNode HA 구성에서 JournalNode 쿼럼이 과반을 잃으면 어떤 일이 발생하는가?",
+    "choices": [
+      "Active NameNode가 edit log를 기록할 수 없어 네임스페이스 변경(쓰기)이 중단된다",
+      "Standby NameNode가 즉시 Active로 승격되어 정상 동작한다",
+      "이미 저장된 블록 데이터가 삭제된다",
+      "DataNode들이 자동으로 복제 계수를 1로 낮춘다"
+    ],
+    "answer_index": 0,
+    "explanation": "HA 구성에서 Active NameNode는 모든 편집을 JournalNode 쿼럼(보통 3~5대 중 과반)에 기록해야 커밋으로 인정한다. 과반이 깨지면 편집을 지속할 수 없어 Active가 스스로 종료하거나 쓰기가 실패한다. 이미 위치를 알고 있는 블록에 대한 읽기는 쿼럼 복구 전까지도 일정 부분 가능하지만, 파일 생성·삭제·리네임 같은 메타데이터 변경은 멈춘다. 그래서 JournalNode는 홀수 대수로 서로 다른 장애 도메인에 배치한다."
+  },
+  {
+    "id": "hdfs-mcq-007",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "클러스터를 재시작했더니 NameNode가 Safemode에서 나오지 않는다. 가장 유력한 원인은?",
+    "choices": [
+      "클라이언트가 읽기 요청을 보내지 않았기 때문이다",
+      "fsimage 파일이 압축되어 있어 읽을 수 없다",
+      "복제 계수가 3이라 Safemode가 자동 해제되지 않는다",
+      "DataNode들이 아직 블록 리포트를 충분히 보내지 않아 보고된 블록 비율이 임계치에 미달했다"
+    ],
+    "answer_index": 3,
+    "explanation": "Safemode는 NameNode가 시작될 때 진입하는 읽기 전용 상태다. DataNode들이 블록 리포트를 보내 '최소 복제본을 가진 블록'의 비율이 임계치(기본 99.9%)를 넘고 유예 시간이 지나면 자동 해제된다. 해제되지 않는다면 다수의 DataNode가 올라오지 않았거나 디스크 장애로 블록이 소실된 경우다. dfsadmin -safemode leave로 강제 해제하기 전에 fsck로 누락·손상 블록을 먼저 확인해야 하며, 성급한 강제 해제는 누락 블록에 대한 복제 폭주나 데이터 손실 은폐로 이어질 수 있다."
+  },
+  {
+    "id": "hdfs-mcq-008",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "HDFS의 파일 모델에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "파일의 임의 위치를 자유롭게 수정할 수 있다",
+      "한 번 쓰면 여러 번 읽는(write-once-read-many) 모델이며 임의 위치 갱신을 지원하지 않고, 파일 끝에 덧붙이는 append만 제한적으로 지원한다",
+      "여러 클라이언트가 하나의 파일에 동시에 쓸 수 있다",
+      "파일 삭제는 즉시 물리적으로 디스크에서 제거된다"
+    ],
+    "answer_index": 1,
+    "explanation": "HDFS는 대용량 순차 처리를 목표로 write-once-read-many 모델을 채택했고, 임의 위치 수정(random write)을 지원하지 않는다. 쓰기는 단일 라이터가 lease를 잡고 수행하며 동시 쓰기는 불가능하다. 삭제된 파일은 trash가 활성화된 경우 .Trash로 이동해 보관 기간 후에 실제 블록이 회수되므로, 실수로 지운 데이터를 복구할 수 있는 여지가 있다. 레코드 갱신이 필요한 요구는 HDFS 자체가 아니라 Iceberg/Hudi 같은 테이블 포맷 계층으로 해결한다."
+  },
+  {
+    "id": "hdfs-mcq-009",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "HDFS Erasure Coding(EC)을 복제 방식과 비교한 설명으로 옳은 것은?",
+    "choices": [
+      "EC는 NameNode 메모리 사용량을 복제 방식보다 항상 줄여 준다",
+      "EC는 저장 공간과 복구 비용을 모두 줄이므로 모든 데이터에 적용하는 것이 유리하다",
+      "EC는 복제 계수 3 대비 저장 오버헤드를 크게 줄이지만, 블록 복구와 지역성 없는 읽기에서 네트워크·CPU 비용이 커져 콜드 데이터에 적합하다",
+      "EC는 쓰기 지연이 복제 방식보다 짧아 실시간 적재에 적합하다"
+    ],
+    "answer_index": 2,
+    "explanation": "3중 복제는 200%의 저장 오버헤드가 발생하지만, RS(6,3) 같은 EC는 약 50% 수준으로 낮춘다. 대신 데이터가 여러 노드에 스트라이핑되어 저장되므로 지역성 있는 읽기가 어려워지고, 블록 하나가 손실되면 다른 여러 블록을 읽어 디코딩해야 해 복구 시 네트워크와 CPU 부하가 크다. 작은 파일에서는 스트라이핑 단위 때문에 블록 그룹 수가 늘어 NameNode 메타데이터가 오히려 늘 수 있다. 따라서 자주 읽지 않는 아카이브·콜드 데이터에 선택적으로 적용하는 것이 일반적이다."
+  },
+  {
+    "id": "hdfs-mcq-010",
+    "category": "hdfs",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "DataNode 한 대를 교체한 뒤 새 노드에만 디스크 사용률이 현저히 낮은 불균형이 발생했다. 가장 적절한 조치는?",
+    "choices": [
+      "HDFS Balancer를 실행해 노드 간 사용률 편차를 임계값 이내로 재분배하고, 필요하면 대역폭 상한을 조정해 운영 부하를 제어한다",
+      "복제 계수를 4로 올려 새 노드에 자동으로 데이터가 쌓이게 한다",
+      "NameNode를 재시작해 블록 배치를 다시 계산하게 한다",
+      "새 노드를 Safemode로 두어 기존 노드의 부하를 줄인다"
+    ],
+    "answer_index": 0,
+    "explanation": "HDFS는 기존 블록을 자동으로 재분배하지 않으며, 신규 쓰기만 여유 있는 노드로 더 배치될 뿐이라 불균형이 오래 지속된다. Balancer는 노드 사용률이 클러스터 평균에서 threshold(기본 10%) 이상 벗어난 노드 사이에서 블록을 이동시키되 랙 어웨어니스 제약을 유지한다. 운영 중 실행 시 대역폭 상한(dfs.datanode.balance.bandwidthPerSec)으로 잡 성능 영향을 조절하며, 한 노드 안의 디스크 간 불균형은 Balancer가 아니라 Disk Balancer의 영역이다. NameNode 재시작으로는 기존 블록 위치가 바뀌지 않는다."
+  },
+  {
+    "id": "hdfs-sub-001",
+    "category": "hdfs",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "클라이언트가 HDFS에서 파일을 읽는 과정을 NameNode와 DataNode의 역할 분담을 중심으로 설명하라.",
+    "model_answer": "클라이언트는 먼저 NameNode에 파일 경로를 열어 달라고 요청해 블록 위치 조회를 수행한다. NameNode는 권한을 확인한 뒤 파일을 구성하는 블록 목록과 각 블록의 복제본이 있는 DataNode 주소들을 반환하며, 이때 클라이언트와의 네트워크 거리(같은 노드 → 같은 랙 → 다른 랙) 기준으로 정렬해 준다. 클라이언트는 각 블록에 대해 가장 가까운 DataNode에 직접 연결해 데이터를 스트리밍으로 읽는다. 즉 실제 데이터는 NameNode를 거치지 않으며, 이것이 NameNode 한 대로도 대규모 클러스터의 처리량을 감당할 수 있는 이유다. 읽는 도중 DataNode가 응답하지 않거나 체크섬 검증에 실패하면 클라이언트는 해당 노드를 기록해 두고 다른 복제본으로 자동 전환하며, 손상 사실을 NameNode에 보고해 재복제가 일어나게 한다. 큰 파일은 블록 단위로 순차 진행되므로 클라이언트는 필요한 블록만 열어 읽는다. 실패 시 복제본 폴백이 일어난다.",
+    "keywords": [
+      "블록 위치 조회",
+      "거리 기준 정렬",
+      "DataNode 직접 통신",
+      "체크섬 검증",
+      "복제본 폴백"
+    ],
+    "explanation": "데이터 경로에서 NameNode가 빠진다는 설계 포인트를 짚는지가 핵심이다. 체크섬 실패 시 다른 복제본으로 넘어가며 손상을 보고하는 흐름까지 설명하면 완성도가 높다."
+  },
+  {
+    "id": "hdfs-sub-002",
+    "category": "hdfs",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "HDFS의 small file problem이 NameNode에 미치는 영향을 정량적 감각과 함께 설명하고, 대응 방안을 제시하라.",
+    "model_answer": "NameNode는 파일, 디렉터리, 블록 각각에 대해 메타데이터 객체를 힙 메모리에 유지한다. 통상 객체 하나가 대략 150바이트 안팎을 차지한다고 알려져 있으므로, 1MB 파일 1억 개는 파일+블록 메타데이터만으로 수십 GB의 힙을 요구한다. 반면 같은 데이터를 128MB 블록으로 저장하면 블록 수가 수백 분의 일로 줄어 힙 부담이 사라진다. 결과적으로 작은 파일이 많으면 NameNode 힙이 포화되어 GC 정지가 길어지고, 재시작 시 fsimage 로드와 블록 리포트 처리 시간이 급증해 클러스터 가용성 자체가 위협받는다. 처리 측면에서도 파일당 태스크가 생겨 스케줄링 오버헤드가 연산을 압도한다. 대응은 (1) 생성 단계에서 배치 주기와 파티션 입도를 조정하고 출력 파티션 수를 제어해 파일 크기를 블록 크기 수준으로 맞추는 것, (2) 이미 쌓인 파일은 주기적 compaction으로 병합하는 것, (3) 아카이브 성격이면 HAR나 SequenceFile로 묶어 블록 수를 줄이는 것, (4) 읽기 시 CombineFileInputFormat 계열로 여러 파일을 한 스플릿에 묶어 태스크 폭증을 완화하는 것이다. 구조적으로 파일 수가 계속 늘 수밖에 없다면 NameNode Federation으로 네임스페이스를 분할해 단일 NameNode의 메모리 한계를 우회하는 방법도 검토한다. 즉 힙 포화와 GC 문제로 이어진다.",
+    "keywords": [
+      "메타데이터 객체 약 150바이트",
+      "힙 포화와 GC",
+      "블록 리포트/재시작 시간",
+      "compaction",
+      "Federation"
+    ],
+    "explanation": "'네임노드 메모리를 쓴다'에서 그치지 않고 규모 감각과 재시작 비용까지 연결하는지를 본다. 예방·정리·구조적 확장 세 층위의 대응을 제시하면 좋은 답이다."
+  },
+  {
+    "id": "hdfs-sub-003",
+    "category": "hdfs",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "hdfs fsck 결과 under-replicated 블록이 대량으로 보고되었다. 원인 후보와 확인·조치 절차를 설명하라.",
+    "model_answer": "under-replicated는 실제 복제본 수가 설정된 복제 계수보다 적은 상태다. 원인 후보는 (1) DataNode 다수가 다운되었거나 네트워크에서 분리된 경우, (2) 디스크 장애로 복제본이 소실된 경우, (3) 노드를 decommission 중이라 복제가 진행 중인 경우, (4) 클러스터 용량이 부족해 추가 복제본을 배치할 곳이 없는 경우, (5) 랙 수나 노드 수가 복제 계수보다 적어 정책상 배치가 불가능한 경우(예: 노드 2대에 복제 계수 3), (6) 대량 쓰기 직후로 재복제가 아직 따라잡지 못한 일시적 상태다. 확인은 dfsadmin -report로 살아 있는 DataNode 수와 용량을, fsck 출력에서 missing/corrupt 블록과 under-replicated 블록을 구분해서 본다. missing이 함께 보이면 복구 불가능한 실제 데이터 손실이므로 우선순위가 다르다. 조치는 다운된 노드를 복구해 다시 합류시키는 것이 최우선이며, 노드가 영구 손실이면 NameNode가 자동으로 재복제를 진행하므로 진행률을 모니터링한다. 재복제가 느리면 노드당 동시 복제 스트림 수 상한을 조정하고, 용량이 부족하면 노드를 증설하거나 오래된 데이터를 정리한다. 노드 수 제약이 원인이면 해당 경로의 복제 계수를 setrep으로 현실적인 값으로 낮춘다. 재복제는 네트워크와 디스크를 크게 소모하므로 운영 중 잡 성능 영향을 함께 관찰해야 한다.",
+    "keywords": [
+      "dfsadmin -report",
+      "missing vs under-replicated",
+      "자동 재복제",
+      "decommission",
+      "setrep"
+    ],
+    "explanation": "under-replicated(복구 가능)와 missing/corrupt(손실)를 구분하는지가 첫 번째 관문이다. 자동 재복제가 동작한다는 사실과 그로 인한 부하까지 언급하면 운영 감각이 드러난다."
+  },
+  {
+    "id": "hdfs-sub-004",
+    "category": "hdfs",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "HDFS NameNode HA 아키텍처의 구성 요소와 자동 페일오버 과정을 설명하고, split-brain을 방지하는 메커니즘을 서술하라.",
+    "model_answer": "HA는 Active NameNode 1대와 Standby NameNode 1대 이상, 공유 편집 저장소인 JournalNode 쿼럼(보통 3대 이상 홀수), 그리고 ZooKeeper와 각 NameNode에 붙는 ZKFC(ZKFailoverController)로 구성된다. Active는 모든 네임스페이스 변경을 JournalNode 과반에 기록하고, Standby는 그 저널을 계속 읽어 메모리 상태를 동기화하며 체크포인트(fsimage 병합)도 담당한다. DataNode는 두 NameNode 모두에 블록 리포트와 하트비트를 보내므로, Standby도 블록 위치 정보를 미리 갖고 있어 승격 시 재구축을 기다릴 필요가 없다. ZKFC는 ZooKeeper에 임시 노드로 리더십 락을 잡고 로컬 NameNode의 상태를 헬스 체크한다. Active가 죽거나 세션이 끊기면 락이 해제되고 다른 ZKFC가 락을 획득해 자신의 NameNode를 Active로 승격시킨다. split-brain 방지는 두 층위로 이뤄진다. 첫째, JournalNode는 epoch 번호를 관리해 더 높은 epoch를 가진 새 writer가 등장하면 이전 writer의 쓰기를 거부한다. 과반 저널에 기록하지 못하면 커밋이 성립하지 않으므로 옛 Active는 사실상 무력화된다. 둘째, 페일오버 시 fencing 방법(SSH로 기존 프로세스 종료, 또는 shell 스크립트 기반 펜싱)을 구성해 옛 Active를 확실히 차단한다. 저널 쿼럼 방식 자체가 강력한 펜싱이라 SSH 펜싱은 보조 수단에 가깝지만, 설정이 없으면 페일오버가 거부되도록 구성하는 것이 안전하다.",
+    "keywords": [
+      "JournalNode 쿼럼",
+      "ZKFC/ZooKeeper 락",
+      "양쪽 블록 리포트",
+      "epoch 번호",
+      "fencing"
+    ],
+    "explanation": "구성 요소 나열을 넘어 '왜 두 Active가 동시에 쓰지 못하는가'를 epoch와 쿼럼으로 설명하는지가 핵심이다. DataNode가 양쪽에 리포트해 승격이 빠르다는 점도 자주 놓치는 포인트다."
+  },
+  {
+    "id": "hdfs-sub-005",
+    "category": "hdfs",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "HDFS의 복제 기반 내구성과 Erasure Coding을 비교해, 데이터 계층(hot/warm/cold)별로 어떤 저장 정책을 적용할지 설계하고 근거를 서술하라.",
+    "model_answer": "3중 복제는 저장 오버헤드가 200%지만, 복제본이 노드에 통째로 존재해 읽기 지역성이 좋고 한 복제본이 깨져도 다른 복제본을 그대로 읽으면 되므로 복구가 저렴하다. Erasure Coding(예: RS(6,3))은 데이터 6조각과 패리티 3조각을 서로 다른 노드에 스트라이핑해 오버헤드를 약 50%로 낮추면서 동일 수준의 장애 허용(임의 3개 손실 허용)을 제공한다. 대신 블록이 여러 노드에 흩어져 있어 지역성 있는 읽기가 사실상 불가능하고, 조각 하나가 손실되면 나머지 조각들을 읽어 디코딩해야 해 복구 시 네트워크·CPU 비용이 복제 대비 훨씬 크다. 또한 작은 파일은 스트라이핑 셀 단위 때문에 블록 그룹 메타데이터가 늘어 NameNode 부담이 오히려 커질 수 있고, 쓰기 경로도 인코딩 때문에 더 무겁다. 설계는 이렇게 잡는다. Hot 계층(최근 며칠, 매일 여러 잡이 스캔)은 3중 복제로 두어 읽기 처리량과 지역성을 확보한다. Warm 계층(주간·월간 배치에서 가끔 조회)은 복제 계수를 2로 낮추거나 데이터 성격에 따라 EC 적용을 검토하되, 파일이 충분히 큰 경우로 한정한다. Cold 계층(규정상 장기 보관, 거의 읽지 않음)은 EC를 적용해 저장 비용을 절반 이하로 줄이고, 필요하면 ARCHIVE 스토리지 타입과 스토리지 정책을 함께 적용해 저가 디스크로 이동시킨다. 전제 조건으로 (1) 계층 이동 전에 반드시 compaction을 수행해 작은 파일을 병합하고, (2) EC 적용 경로는 별도 디렉터리로 분리해 정책을 명확히 하며, (3) 클러스터 노드·랙 수가 EC 스킴이 요구하는 최소치를 만족하는지 확인해야 한다. 운영 지표로는 복구 이벤트 빈도와 재구성 소요 시간, 잡의 읽기 지연 변화를 모니터링해 정책을 조정한다. 이때 compaction 선행이 필요하다.",
+    "keywords": [
+      "저장 오버헤드 200% vs 약 50%",
+      "읽기 지역성 상실",
+      "복구 시 디코딩 비용",
+      "스토리지 정책/ARCHIVE",
+      "compaction 선행"
+    ],
+    "explanation": "EC를 '공간을 아끼는 좋은 기능'으로만 아는지, 복구 비용과 지역성 손실이라는 대가를 이해하는지를 가른다. 계층별 정책과 적용 전제 조건(파일 크기, 노드 수)까지 제시하면 설계 능력이 드러난다."
+  }
+]

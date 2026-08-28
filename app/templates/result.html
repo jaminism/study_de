@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>채점 결과</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+
+{% if payload is none %}
+  <header class="page-head">
+    <h1>결과를 찾을 수 없습니다</h1>
+    <p class="lede">결과 <code>{{ result_id }}</code> 가 만료되었거나 서버가 재시작되었습니다.</p>
+  </header>
+  <p><a class="btn btn-primary" href="{{ url_for('index') }}">카테고리로 돌아가기</a></p>
+{% else %}
+  {% set s = payload.summary %}
+
+  <header class="page-head result-head">
+    <a class="back" href="{{ url_for('index') }}">&larr; 카테고리</a>
+    <p class="eyebrow">{{ s.category_label }}</p>
+    <h1>채점 결과</h1>
+    <div class="score-hero">
+      <div class="score-ring
+                  {% if s.percentage >= 80 %}ring-good{% elif s.percentage >= 60 %}ring-mid{% else %}ring-low{% endif %}">
+        <span class="score-num">{{ s.percentage }}<small>%</small></span>
+        <span class="score-sub">{{ '%.1f'|format(s.score) }} / {{ s.total }}</span>
+      </div>
+      <dl class="stats">
+        <div><dt>총 문항</dt><dd>{{ s.total }}</dd></div>
+        <div><dt>답변</dt><dd>{{ s.answered }}</dd></div>
+        <div><dt>정답</dt><dd>{{ s.correct }}</dd></div>
+        {% if s.mcq_total %}
+        <div><dt>객관식</dt><dd>{{ s.mcq_correct }} / {{ s.mcq_total }}</dd></div>
+        {% endif %}
+        {% if s.subjective_total %}
+        <div><dt>주관식</dt><dd>{{ s.subjective_correct }} / {{ s.subjective_total }}</dd></div>
+        {% endif %}
+      </dl>
+    </div>
+    <div class="result-actions">
+      <a class="btn btn-primary" href="{{ url_for('quiz', category=s.category, type=s.type, difficulty=s.difficulty, count=s.total) }}">같은 조건으로 다시 풀기</a>
+      <a class="btn btn-ghost" href="{{ url_for('index') }}">다른 카테고리 선택</a>
+    </div>
+  </header>
+
+  <h2 class="section-title">문항별 리뷰</h2>
+
+  {% for r in payload.results %}
+  <article class="card review {% if r.correct %}ok{% elif not r.answered %}skip{% else %}bad{% endif %}">
+    <div class="q-meta">
+      <span class="verdict">
+        {% if r.correct %}정답{% elif not r.answered %}미응답{% else %}오답{% endif %}
+      </span>
+      <span class="chip chip-cat">{{ r.category }}</span>
+      <span class="chip chip-{{ r.difficulty }}">{{ r.difficulty }}</span>
+      <span class="q-id">{{ r.question_id }}</span>
+      {% if r.type == 'subjective' %}
+        <span class="chip chip-score">{{ (r.score * 100)|round(0, 'floor')|int }}%</span>
+      {% endif %}
+    </div>
+
+    <h3 class="q-text">{{ loop.index }}. {{ r.question }}</h3>
+
+    {% if r.type == 'mcq' %}
+      <ol class="choices review-choices">
+        {% for choice in r.choices %}
+        <li class="choice
+                   {% if loop.index0 == r.answer_index %}is-answer{% endif %}
+                   {% if loop.index0 == r.selected_index and loop.index0 != r.answer_index %}is-wrong{% endif %}">
+          {# 선택지 라벨: 0~7 은 A~H, 9지선다 이상이 유입되면 인덱스 초과 대신 숫자로 폴백 #}
+          <span class="choice-key">{{ 'ABCDEFGH'[loop.index0] if loop.index0 < 8 else loop.index }}</span>
+          <span class="choice-text">{{ choice }}</span>
+          {% if loop.index0 == r.answer_index %}<span class="tag tag-answer">정답</span>{% endif %}
+          {% if loop.index0 == r.selected_index %}<span class="tag tag-yours">내 선택</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <div class="kw-block">
+        <p class="kw-title">
+          키워드 매칭 {{ r.matched_keywords|length }} / {{ r.keyword_total }}
+          <span class="muted">({{ (r.pass_ratio * 100)|int }}% 이상이면 정답 처리)</span>
+        </p>
+        <p class="kw-list">
+          {% for k in r.matched_keywords %}<span class="kw kw-hit">{{ k }}</span>{% endfor %}
+          {% for k in r.missed_keywords %}<span class="kw kw-miss">{{ k }}</span>{% endfor %}
+        </p>
+      </div>
+      <div class="answer-block">
+        <h4>내 답안</h4>
+        <p class="user-answer">{{ r.user_answer or '(작성하지 않음)' }}</p>
+      </div>
+      <div class="answer-block model">
+        <h4>모범 답안</h4>
+        <p>{{ r.model_answer }}</p>
+      </div>
+    {% endif %}
+
+    {% if r.explanation %}
+    <div class="explain">
+      <h4>해설</h4>
+      <p>{{ r.explanation }}</p>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+
+  <p class="result-actions bottom">
+    <a class="btn btn-primary" href="{{ url_for('quiz', category=s.category, type=s.type, difficulty=s.difficulty, count=s.total) }}">다시 풀기</a>
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">카테고리로</a>
+  </p>
+{% endif %}
+
+</div>
+</body>
+</html>

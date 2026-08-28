@@ -1,0 +1,232 @@
+[
+  {
+    "id": "yarn-mcq-001",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "YARN의 ResourceManager, NodeManager, ApplicationMaster의 역할을 올바르게 짝지은 것은?",
+    "choices": [
+      "RM은 태스크를 직접 실행, NM은 자원 요청, AM은 클러스터 자원 총량 관리",
+      "RM은 데이터 블록 배치, NM은 메타데이터 관리, AM은 복제 관리",
+      "RM은 클러스터 전체 자원 중재, NM은 노드별 컨테이너 실행·감시, AM은 애플리케이션 단위 자원 협상·태스크 관리",
+      "RM은 애플리케이션 코드 컴파일, NM은 로그 수집만, AM은 스케줄러 설정 변경"
+    ],
+    "answer_index": 2,
+    "explanation": "ResourceManager는 클러스터 전역 스케줄러로 어느 큐/애플리케이션에 얼마의 자원을 줄지 중재한다. NodeManager는 각 노드에서 컨테이너를 실행하고 자원 사용량을 감시하며 초과 시 종료한다. ApplicationMaster는 애플리케이션마다 하나씩 뜨는 조정자로, RM과 자원을 협상하고 받은 컨테이너에 태스크를 배치한다. 이 분리 덕분에 RM이 개별 태스크 관리 부담에서 벗어나 확장성을 확보한다."
+  },
+  {
+    "id": "yarn-mcq-002",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "YARN 컨테이너에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "Docker 이미지와 동일한 개념으로 항상 컨테이너 런타임 격리를 사용한다",
+      "한 애플리케이션당 하나만 생성되며 태스크 수와 무관하다",
+      "컨테이너 크기는 애플리케이션이 요청한 값 그대로 항상 정확히 할당된다",
+      "특정 노드의 메모리·vcore 등 자원 할당 단위이며, NodeManager가 이 범위 내에서 프로세스를 실행·감시한다"
+    ],
+    "answer_index": 3,
+    "explanation": "YARN 컨테이너는 '노드 X에서 메모리 4GB, vcore 2개를 쓸 권리'를 뜻하는 논리적 자원 할당 단위다. NodeManager가 그 안에서 프로세스를 띄우고 사용량을 감시해 한도를 넘으면 종료한다. 요청 크기는 `yarn.scheduler.minimum-allocation-mb` 단위로 올림되므로 요청값보다 큰 값이 할당될 수 있고(예: 최소 단위 1GB에 1.5GB 요청 시 2GB), 이 반올림이 클러스터 낭비의 원인이 되기도 한다. Docker 런타임은 선택적으로 사용할 수 있는 옵션일 뿐 필수가 아니다."
+  },
+  {
+    "id": "yarn-mcq-003",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Capacity Scheduler와 Fair Scheduler의 기본 철학 차이로 가장 적절한 것은?",
+    "choices": [
+      "Capacity Scheduler는 큐별 용량 보장을 우선하고, Fair Scheduler는 실행 중인 잡들에 자원을 균등하게 나누는 것을 우선한다",
+      "Capacity Scheduler는 선점을 지원하지 않고 Fair Scheduler만 지원한다",
+      "Capacity Scheduler는 단일 큐만 지원하고 Fair Scheduler는 계층 큐를 지원한다",
+      "Fair Scheduler는 메모리만, Capacity Scheduler는 CPU만 고려한다"
+    ],
+    "answer_index": 0,
+    "explanation": "Capacity Scheduler는 조직별로 최소 용량을 보장하고 여유가 있을 때만 초과 사용을 허용하는 '용량 계약' 모델이다. Fair Scheduler는 실행 중인 애플리케이션들이 시간이 지나면 평균적으로 균등한 자원을 받도록 조정하는 모델이다. 양쪽 모두 계층 큐와 선점을 지원하며, 현재 Hadoop 3.x 배포판 다수가 Capacity Scheduler를 기본값으로 두고 Fair Scheduler의 기능을 흡수해 왔다."
+  },
+  {
+    "id": "yarn-mcq-004",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Capacity Scheduler에서 큐의 capacity가 20%이고 `user-limit-factor`가 기본값 1일 때, 클러스터가 완전히 유휴 상태라면 한 사용자가 쓸 수 있는 최대 자원은?",
+    "choices": [
+      "클러스터 전체 100%까지 사용할 수 있다",
+      "큐의 설정 용량인 20%를 넘을 수 없다",
+      "큐의 maximum-capacity까지 사용할 수 있다",
+      "다른 사용자가 없으면 제한이 적용되지 않는다"
+    ],
+    "answer_index": 1,
+    "explanation": "user-limit-factor는 '한 사용자가 큐 설정 용량의 몇 배까지 쓸 수 있는가'를 나타내는 배수이며 기본값 1이다. 즉 클러스터가 아무리 한가해도 단일 사용자는 큐 용량(20%)을 넘지 못한다. 유휴 자원을 활용하려면 이 값을 2, 3처럼 올려야 하며, 이때는 큐의 maximum-capacity가 상한이 된다. 반대로 값을 크게 올리면 한 사용자가 큐를 독점해 같은 큐의 다른 사용자가 스타베이션을 겪을 수 있다."
+  },
+  {
+    "id": "yarn-mcq-005",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Capacity Scheduler의 `capacity`와 `maximum-capacity` 설정 의미로 옳은 것은?",
+    "choices": [
+      "capacity는 상한, maximum-capacity는 하한을 의미한다",
+      "두 값은 항상 같아야 하며 다르면 스케줄러가 기동하지 않는다",
+      "maximum-capacity를 설정하지 않으면 큐는 capacity를 절대 초과할 수 없다",
+      "capacity는 보장되는 최소 용량, maximum-capacity는 유휴 자원을 빌려 쓸 때의 탄력적 상한을 의미한다"
+    ],
+    "answer_index": 3,
+    "explanation": "capacity는 다른 큐가 바쁠 때에도 보장받는 최소 몫이고, maximum-capacity는 다른 큐가 한가할 때 빌려 쓸 수 있는 최대치(elasticity 상한)다. maximum-capacity를 지정하지 않으면 기본 100%로 큐가 클러스터 전체를 점유할 수 있으며, 이 상태에서 선점이 꺼져 있으면 뒤늦게 들어온 다른 큐의 잡이 오래 대기하게 된다. 스트리밍처럼 오래 도는 잡이 있는 큐일수록 maximum-capacity를 명시적으로 제한해야 한다."
+  },
+  {
+    "id": "yarn-mcq-006",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "`yarn.scheduler.capacity.<queue>.minimum-user-limit-percent`를 25로 설정했을 때의 동작은?",
+    "choices": [
+      "큐에 사용자가 몰려도 각 사용자에게 큐 자원의 최소 25%가 보장되며, 결과적으로 동시에 자원을 나눠 갖는 사용자는 최대 4명 수준으로 제한된다",
+      "해당 큐는 클러스터 자원의 최소 25%를 항상 보장받는다",
+      "사용자가 큐 자원의 25%를 넘게 쓰면 애플리케이션이 강제 종료된다",
+      "큐 자원의 25%는 ApplicationMaster 전용으로 예약된다"
+    ],
+    "answer_index": 0,
+    "explanation": "minimum-user-limit-percent는 사용자 단위 하한을 정한다. 값이 25면 사용자 수가 늘어도 각 사용자에게 큐 자원의 최소 25%가 보장되므로 활성 사용자는 사실상 4명까지 자원을 나눠 갖고, 그 이상은 앞선 사용자의 잡이 끝날 때까지 대기한다. 기본값 100은 '사용자별 하한 없음'을 뜻해 한 사용자가 큐를 채울 수 있다. 값이 작을수록 많은 사용자가 동시에 조금씩 쓰고, 클수록 소수 사용자가 빠르게 끝낸다는 트레이드오프가 있다."
+  },
+  {
+    "id": "yarn-mcq-007",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "특정 큐에 수백 개의 애플리케이션이 제출된 뒤 모두 ACCEPTED 상태에서 진행되지 않고, 어떤 잡도 실제 태스크를 실행하지 못한다. 가장 유력한 원인은?",
+    "choices": [
+      "NodeManager가 모두 다운되어 클러스터에 자원이 없다",
+      "HDFS NameNode가 세이프모드에 있어 스케줄링이 중단되었다",
+      "`maximum-am-resource-percent`가 너무 높아 큐 자원이 ApplicationMaster로만 채워져 태스크용 컨테이너를 받을 수 없다",
+      "큐의 capacity가 0으로 설정되어 애플리케이션 제출 자체가 거부되고 있다"
+    ],
+    "answer_index": 2,
+    "explanation": "`yarn.scheduler.capacity.maximum-am-resource-percent`(기본 0.1)는 큐 자원 중 AM 컨테이너가 차지할 수 있는 비율 상한이다. 이 값을 크게 올리거나 AM이 큰 큐에 소형 잡을 대량 제출하면, 큐가 AM 컨테이너로 가득 차 정작 태스크 컨테이너를 받을 자원이 없어 모두 서로를 기다리는 데드락 형태가 된다. 진단은 스케줄러 UI에서 큐의 'Used AM Resource'를 확인하면 되고, 대응은 AM 비율을 적정 수준으로 낮추거나 큐 용량을 늘리고 동시 제출 수(max-applications)를 제한하는 것이다. NM 전면 장애라면 애플리케이션은 ACCEPTED가 아니라 노드 수 0으로 드러난다."
+  },
+  {
+    "id": "yarn-mcq-008",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "ResourceManager HA 구성에서 액티브 RM이 장애로 전환될 때 실행 중이던 애플리케이션이 처음부터 다시 시작되지 않게 하려면 무엇이 필요한가?",
+    "choices": [
+      "NodeManager를 모두 재시작해 상태를 초기화한다",
+      "상태 저장소(ZooKeeper 기반 RMStateStore)에 애플리케이션 상태를 저장하고 work-preserving 재시작을 활성화한다",
+      "액티브/스탠바이 RM이 동일한 로컬 디스크를 NFS로 공유하도록 한다",
+      "HA에서는 항상 애플리케이션이 재시작되므로 방지할 수 없다"
+    ],
+    "answer_index": 1,
+    "explanation": "RM HA는 액티브-스탠바이 쌍으로 구성되며, 스탠바이가 액티브로 승격될 때 지정된 상태 저장소(주로 ZooKeeper의 ZKRMStateStore)에서 내부 상태를 로드한다. 여기에 work-preserving RM restart가 켜져 있으면 NodeManager들이 자신이 실행 중인 컨테이너를 재등록해 알려주므로, 이미 돌던 컨테이너를 죽이지 않고 이어서 관리할 수 있다. 페일오버 자체는 ZooKeeper 기반 리더 선출과 fencing으로 스플릿 브레인을 방지한다."
+  },
+  {
+    "id": "yarn-mcq-009",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Capacity Scheduler 선점(preemption)에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "선점은 우선순위가 낮은 큐의 컨테이너를 무조건 즉시 강제 종료하며 유예 시간이 없다",
+      "선점이 켜져 있으면 큐가 maximum-capacity를 초과해 자원을 빌려 쓸 수 없게 된다",
+      "선점은 ApplicationMaster 컨테이너를 우선적으로 회수하도록 설계되어 있다",
+      "선점은 자기 보장 용량(capacity) 아래로 굶고 있는 큐를 위해, 보장 용량을 초과해 쓰고 있는 큐의 컨테이너를 회수하는 기능이다"
+    ],
+    "answer_index": 3,
+    "explanation": "선점의 목적은 '빌려준 자원을 되찾는 것'이다. 큐가 유휴 자원을 빌려 보장 용량을 초과해 쓰는 동안, 자기 보장 용량조차 못 받는 큐가 생기면 스케줄러가 초과 사용 큐의 컨테이너를 회수 대상으로 표시한다. 이때 즉시 죽이는 것이 아니라 먼저 AM에 반납을 요청하고 유예 시간(wait-time-before-kill) 후에 강제 종료한다. AM 컨테이너는 죽으면 애플리케이션 전체가 재시작되므로 가급적 선점 대상에서 보호되며, 큐 단위로 `disable_preemption`을 지정해 스트리밍 같은 워크로드를 보호할 수 있다."
+  },
+  {
+    "id": "yarn-mcq-010",
+    "category": "yarn",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "기본 `DefaultResourceCalculator` 대신 `DominantResourceCalculator`를 사용해야 하는 이유로 가장 적절한 것은?",
+    "choices": [
+      "DefaultResourceCalculator는 메모리만 고려해 vcore 요청을 사실상 무시하므로, CPU 집약 워크로드가 섞이면 노드 CPU가 과다 구독되어 성능이 급격히 저하된다",
+      "DominantResourceCalculator는 스케줄링 속도가 빨라 대규모 클러스터에서 지연이 감소한다",
+      "DefaultResourceCalculator는 디스크 I/O까지 계산에 넣어 오버헤드가 크다",
+      "DominantResourceCalculator를 써야만 계층 큐를 사용할 수 있다"
+    ],
+    "answer_index": 0,
+    "explanation": "DefaultResourceCalculator는 메모리 단일 축으로만 자원을 비교하므로, 4 vcore를 요청한 컨테이너든 1 vcore를 요청한 컨테이너든 메모리가 같으면 동일하게 취급한다. 그 결과 노드에 실제 코어 수보다 훨씬 많은 vcore가 배정되어 CPU 경합이 발생한다. DominantResourceCalculator는 DRF(Dominant Resource Fairness)를 적용해 각 애플리케이션의 지배적 자원 비율을 기준으로 공정성을 계산하므로 메모리와 CPU를 함께 통제할 수 있다. CPU 바운드 잡이 섞인 멀티테넌트 클러스터에서는 사실상 필수 설정이다."
+  },
+  {
+    "id": "yarn-sub-001",
+    "category": "yarn",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "YARN에서 애플리케이션이 제출된 후 첫 태스크가 실행되기까지의 흐름을 컴포넌트 관점에서 설명하라.",
+    "model_answer": "클라이언트가 ResourceManager에 애플리케이션을 제출하면 RM은 애플리케이션 ID를 발급하고 대상 큐의 ACL·자원 여유·AM 자원 한도를 확인한 뒤 ACCEPTED 상태로 둔다. 스케줄러가 큐 정책에 따라 자원을 배정하면 RM은 적절한 노드의 NodeManager에게 ApplicationMaster 컨테이너를 띄우도록 지시하고, 애플리케이션은 RUNNING 상태가 된다. 기동된 AM은 RM에 등록한 뒤 필요한 태스크 수만큼 컨테이너를 요청하는데, 이때 데이터 지역성(호스트/랙) 힌트를 함께 전달한다. RM 스케줄러는 하트비트로 올라온 노드의 여유 자원과 큐 제약을 보고 컨테이너를 할당하고, AM은 해당 NodeManager에 컨테이너 실행을 요청해 태스크를 시작한다. NodeManager는 컨테이너의 메모리·CPU 사용량을 감시해 한도를 넘으면 종료하며, 태스크 상태는 AM에게, 애플리케이션 상태는 AM이 RM에게 주기적으로 보고한다. 애플리케이션이 끝나면 AM이 RM에 등록 해제하고 컨테이너가 정리되며 로그는 집계(log aggregation)되어 HDFS에 저장된다.",
+    "keywords": [
+      "ACCEPTED→RUNNING",
+      "AM 컨테이너 기동",
+      "컨테이너 요청/할당",
+      "하트비트",
+      "데이터 지역성"
+    ],
+    "explanation": "RM은 중재만 하고 실제 태스크 관리는 AM이 한다는 책임 분리를 설명할 수 있는지가 핵심이다."
+  },
+  {
+    "id": "yarn-sub-002",
+    "category": "yarn",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "한 큐의 잡들이 클러스터 자원을 거의 독점해 다른 큐의 잡이 몇 시간째 대기 중이다. 원인 후보와 인프라 레벨의 해결책을 설명하라.",
+    "model_answer": "먼저 스케줄러 UI에서 각 큐의 configured capacity, used capacity, max capacity, 활성 애플리케이션 수를 확인해 어느 제약이 비어 있는지 본다. 흔한 원인은 (1) 문제 큐의 maximum-capacity가 100%로 열려 있어 유휴 자원을 전부 빌려 간 뒤 반납하지 않는 경우, (2) 선점(preemption)이 비활성화되어 있어 이미 할당된 컨테이너를 회수할 수 없는 경우, (3) 문제 큐의 잡이 오래 도는 장기 실행 애플리케이션(스트리밍 등)이라 자연 반납이 일어나지 않는 경우, (4) user-limit-factor가 크게 설정되어 한 사용자가 큐를 넘어 점유하는 경우다. 해결책은 인프라 레벨에서 (a) 큐별 maximum-capacity를 현실적인 상한으로 제한하고, (b) 선점을 활성화하되 보호가 필요한 큐에는 disable_preemption을 적용하며, (c) 장기 실행 워크로드는 별도 큐로 분리하고 maximum-capacity를 보장 용량에 가깝게 좁히고, (d) user-limit-factor와 minimum-user-limit-percent로 사용자 단위 독점을 막고, (e) max-applications / max-am-resource-percent로 동시 제출량을 제어하는 것이다. 운영 절차로는 큐 사용률과 대기 시간(pending 컨테이너, 큐별 대기 시간)을 지표화해 임계치 알림을 걸고, 큐 설정 변경은 `yarn rmadmin -refreshQueues`로 RM 재시작 없이 적용한다.",
+    "keywords": [
+      "maximum-capacity 제한",
+      "선점 활성화",
+      "user-limit-factor",
+      "장기 실행 잡 큐 분리",
+      "refreshQueues"
+    ],
+    "explanation": "리소스 스타베이션은 대개 '탄력 상한 미설정 + 선점 비활성화'의 조합에서 나온다. 애플리케이션 튜닝이 아니라 큐 정책으로 푸는 문제다."
+  },
+  {
+    "id": "yarn-sub-003",
+    "category": "yarn",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "NodeManager 로그에 'Container killed: running beyond physical memory limits'가 반복 기록된다. YARN 인프라 관점에서 원인과 대응을 설명하라.",
+    "model_answer": "NodeManager는 컨테이너 프로세스 트리의 메모리 사용량을 주기적으로 감시해 `yarn.nodemanager.pmem-check-enabled`가 켜져 있으면 물리 메모리 한도 초과 시, `vmem-check-enabled`가 켜져 있으면 가상 메모리(`yarn.nodemanager.vmem-pmem-ratio` 배수) 초과 시 컨테이너를 종료한다. 원인은 대체로 (1) 컨테이너에 요청한 메모리보다 실제 사용량이 큰 경우, (2) JVM 힙 외 영역(네이티브 메모리, 스레드 스택, 오프힙 버퍼)이 계산에 빠져 컨테이너 한도를 넘는 경우, (3) 컨테이너 안에서 파이썬 등 하위 프로세스를 띄워 프로세스 트리 합계가 커지는 경우다. 인프라 레벨 대응은 (a) `yarn.scheduler.minimum-allocation-mb`/`maximum-allocation-mb`와 노드의 `yarn.nodemanager.resource.memory-mb`를 실제 하드웨어와 OS·데몬 여유분을 고려해 재산정하고, (b) 컨테이너 요청 크기가 최소 할당 단위로 올림되는 점을 감안해 낭비 없는 단위를 잡으며, (c) 가상 메모리 체크는 오탐이 잦아 vmem-check를 끄거나 비율을 높이는 것이 일반적이고, (d) cgroup 기반 자원 격리를 활성화해 CPU/메모리 통제를 커널 수준으로 옮기는 방법이 있다. 애플리케이션 쪽 힙·오버헤드 튜닝은 별도 영역이며, 인프라 담당자는 노드 자원 산정과 할당 단위 정책, 감시 설정의 적정성을 먼저 점검해야 한다.",
+    "keywords": [
+      "pmem-check-enabled",
+      "vmem-pmem-ratio",
+      "nodemanager.resource.memory-mb",
+      "최소 할당 단위 올림",
+      "cgroup 격리"
+    ],
+    "explanation": "컨테이너 kill은 애플리케이션 버그로만 보기 쉬우나, NM 감시 설정과 노드 자원 산정이 원인인 경우가 많다는 점을 확인하는 문제다."
+  },
+  {
+    "id": "yarn-sub-004",
+    "category": "yarn",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "야간 ETL 배치, 주간 임시 분석(ad-hoc), 24시간 스트리밍이 공존하는 클러스터의 Capacity Scheduler 큐 설계를 제안하고 근거를 설명하라.",
+    "model_answer": "세 워크로드는 SLA와 자원 사용 패턴이 다르므로 워크로드별 큐 분리를 원칙으로 삼아 최상위 큐를 etl, adhoc, streaming으로 나눈다. streaming은 항상 떠 있어야 하므로 capacity를 실제 정상 사용량에 맞춰 보장하고, maximum-capacity를 보장 용량에 가깝게 좁혀 다른 워크로드를 침범하지 않게 하며, 선점 제외(disable_preemption) 설정을 적용해 컨테이너가 회수되어 재시작되는 일을 막는다. etl은 야간에 대량 자원이 필요하므로 capacity는 중간으로 두고 탄력 상한(maximum-capacity)은 크게 열어 유휴 자원을 흡수하도록 하고 선점 대상이 되게 둔다. adhoc은 대화형이라 대기 시간이 중요하므로 capacity를 일정 수준 보장하고, minimum-user-limit-percent를 낮춰 여러 분석가가 동시에 조금씩 쓸 수 있게 하며, user-limit-factor는 1 근처로 유지해 한 사람이 큐를 독점하지 못하게 한다. 또한 max-applications와 maximum-am-resource-percent로 동시 제출 폭주를 제한하고, adhoc 잡에는 큐 수준에서 최대 실행 시간/자원 상한 정책을 두어 폭주 쿼리가 야간 배치를 침범하지 않게 한다. 시간대별 수요 차이는 큐 우선순위와 선점을 조합하거나, 스케줄 기반 시간대별 용량 조정(refreshQueues)으로 야간에는 etl 비중을 높이는 방식으로 대응한다. 노드가 이기종이면 node label로 고메모리/GPU 노드를 분리해 특정 큐만 접근하게 한다. 마지막으로 큐별 사용률·대기 시간·선점 발생 건수를 모니터링해 설정을 주기적으로 재조정한다.",
+    "keywords": [
+      "워크로드별 큐 분리",
+      "선점 제외(disable_preemption)",
+      "탄력 상한(maximum-capacity)",
+      "시간대별 용량 조정",
+      "node label"
+    ],
+    "explanation": "큐 설계는 숫자 배분이 아니라 SLA와 워크로드 수명 특성에 맞춘 정책 조합이라는 점을 볼 수 있는지가 핵심이다."
+  },
+  {
+    "id": "yarn-sub-005",
+    "category": "yarn",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "이기종 노드(고메모리 노드, GPU 노드, 일반 노드)가 섞인 YARN 클러스터에서 특정 워크로드만 특정 노드에 배치되도록 하는 방법과 운영상 주의점을 설명하라.",
+    "model_answer": "YARN의 node label(노드 레이블)을 사용한다. 노드에 highmem, gpu 같은 레이블을 부여하고, Capacity Scheduler에서 큐별로 접근 가능한 레이블(accessible-node-labels)과 레이블별 용량(capacity, maximum-capacity)을 설정한다. 애플리케이션은 제출 시 node-label-expression을 지정해 해당 레이블 노드에서만 컨테이너를 받는다. 레이블은 exclusive와 non-exclusive 두 유형이 있는데, exclusive는 해당 레이블을 요청한 잡만 그 노드를 쓰고, non-exclusive는 유휴 시 레이블 없는(DEFAULT 파티션) 잡도 빌려 쓸 수 있다. GPU처럼 비싼 자원은 exclusive로 두어 일반 잡의 침범을 막는 것이 보통이다. 주의점은 (1) 레이블 파티션마다 별도의 용량 계산이 이뤄지므로 큐 설정이 두 배로 복잡해지고, 설정 누락 시 해당 큐가 레이블 노드를 전혀 못 쓰거나 반대로 독점하게 된다는 점, (2) exclusive 레이블 노드는 수요가 없을 때 통째로 놀아 활용률이 떨어진다는 점, (3) AM 컨테이너가 레이블 노드에 뜨면 비싼 자원을 낭비하므로 AM은 DEFAULT 파티션에 두는 것이 바람직하다는 점, (4) 레이블 변경은 `yarn rmadmin -replaceLabelsOnNode`로 반영하되 실행 중 컨테이너에는 소급 적용되지 않는다는 점이다. 또한 GPU 같은 자원은 최신 YARN의 확장 자원 타입(resource types)과 cgroup/디바이스 격리를 함께 써야 실제 격리가 보장되며, 레이블별 사용률을 모니터링해 하드웨어 투자 대비 활용도를 주기적으로 검토해야 한다.",
+    "keywords": [
+      "node label",
+      "exclusive vs non-exclusive",
+      "accessible-node-labels",
+      "레이블별 큐 용량",
+      "AM 배치 주의"
+    ],
+    "explanation": "이기종 클러스터 운영의 표준 수단인 node label의 동작과, 활용률 하락·설정 복잡도라는 대가를 함께 인지하는지 확인하는 문제다."
+  }
+]

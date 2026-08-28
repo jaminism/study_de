@@ -1,0 +1,494 @@
+[
+  {
+    "id": "python-mcq-001",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "CPython의 GIL(Global Interpreter Lock)에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "한 프로세스 내에서 한 시점에 하나의 스레드만 파이썬 바이트코드를 실행할 수 있게 한다",
+      "여러 프로세스가 동시에 파이썬 코드를 실행하지 못하게 막는다",
+      "I/O 작업 중에도 락이 유지되어 스레드가 전혀 겹쳐 실행되지 못한다",
+      "파이썬 코드의 모든 연산을 원자적으로 만들어 락 없이 안전한 동시성을 보장한다"
+    ],
+    "answer_index": 0,
+    "explanation": "GIL은 프로세스 단위 락으로, 한 인터프리터 프로세스 안에서 동시에 하나의 스레드만 바이트코드를 실행하게 한다. 프로세스는 각자 GIL을 가지므로 multiprocessing으로는 진짜 병렬 실행이 가능하다(2번 오답). I/O 대기, C 확장 호출(NumPy 연산 등) 중에는 GIL이 해제되어 다른 스레드가 진행할 수 있다(3번 오답). GIL은 개별 바이트코드 수준의 보호일 뿐 `x += 1` 같은 복합 연산의 원자성을 보장하지 않는다(4번 오답)."
+  },
+  {
+    "id": "python-mcq-002",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "50GB 로그 파일을 한 줄씩 파싱해 집계하는 스크립트에서 `lines = f.readlines()` 대신 `for line in f:`를 쓰는 이유는?",
+    "choices": [
+      "readlines()가 줄바꿈 문자를 제거해 파싱이 깨지기 때문",
+      "for 루프가 내부적으로 멀티스레드로 실행되어 더 빠르기 때문",
+      "파일 객체는 이터레이터라 한 번에 한 줄(내부 버퍼 단위)만 메모리에 올려 전체 파일 적재를 피하기 때문",
+      "readlines()는 텍스트 모드에서 인코딩 오류를 무시하기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "`readlines()`는 모든 줄을 리스트로 만들어 파일 전체를 메모리에 올리므로 대용량 파일에서 즉시 OOM이 난다. 파일 객체 자체가 이터레이터이므로 `for line in f:`는 버퍼 단위로 읽어 상수 수준 메모리로 스트리밍 처리한다. 두 방식 모두 줄바꿈은 유지되며, 병렬 실행이나 인코딩 처리와는 무관하다."
+  },
+  {
+    "id": "python-mcq-003",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "다음 중 제너레이터(generator)의 특성으로 옳지 않은 것은?",
+    "choices": [
+      "yield를 만나면 상태를 유지한 채 실행을 중단하고 호출자에게 값을 넘긴다",
+      "값을 요청할 때마다 계산하므로 무한 시퀀스도 표현할 수 있다",
+      "한 번 소진되면 다시 순회할 수 없어 재사용하려면 다시 생성해야 한다",
+      "len()으로 전체 개수를 미리 알 수 있어 진행률 표시에 적합하다"
+    ],
+    "answer_index": 3,
+    "explanation": "제너레이터는 전체를 materialize하지 않으므로 길이를 알 수 없고 `len()`은 TypeError를 낸다. 진행률이 필요하면 별도 카운터나 소스의 총량을 따로 얻어야 한다. 나머지는 모두 옳은 설명이며, 특히 '한 번 소진되면 끝'이라는 성질은 제너레이터를 두 번 순회하는 코드에서 두 번째 결과가 조용히 빈 값이 되는 실무 버그의 원인이 된다."
+  },
+  {
+    "id": "python-mcq-004",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "ETL 태스크에서 DB 커넥션을 `with get_connection() as conn:` 형태로 사용하는 가장 큰 이유는?",
+    "choices": [
+      "with 블록 안의 코드가 자동으로 트랜잭션 재시도를 수행하기 때문",
+      "예외가 발생해도 __exit__가 호출되어 리소스가 확실히 정리되기 때문",
+      "with 블록이 GIL을 해제해 다른 스레드가 동시에 실행되기 때문",
+      "커넥션 객체가 자동으로 여러 프로세스에 공유되기 때문"
+    ],
+    "answer_index": 1,
+    "explanation": "컨텍스트 매니저의 핵심은 결정적(deterministic) 리소스 해제다. 블록을 정상 종료하든 예외로 빠져나가든 `__exit__`가 호출되어 커넥션·파일·락이 해제되므로, 장시간 도는 ETL에서 커넥션 누수로 풀이 고갈되는 문제를 막는다. 재시도, GIL 해제, 프로세스 간 공유는 컨텍스트 매니저가 제공하는 기능이 아니다."
+  },
+  {
+    "id": "python-mcq-005",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "8GB RAM 서버에서 pandas로 20GB Parquet을 `pd.read_parquet()` 한 번에 읽으려 할 때 예상되는 결과와 그 이유로 옳은 것은?",
+    "choices": [
+      "pandas가 자동으로 디스크 스필을 수행해 느리지만 정상 완료된다",
+      "Parquet은 압축 포맷이므로 압축 상태 그대로 메모리에 유지되어 문제없다",
+      "pandas가 자동으로 여러 코어에 분산 처리해 메모리 사용량이 1/N로 줄어든다",
+      "pandas는 DataFrame 전체를 단일 프로세스 메모리에 적재하므로 MemoryError 또는 OOM Kill이 발생한다"
+    ],
+    "answer_index": 3,
+    "explanation": "pandas는 단일 머신·단일 프로세스 인메모리 라이브러리로 디스크 스필이나 자동 분산 처리를 하지 않는다. 게다가 Parquet은 압축·인코딩된 상태로 저장되므로 메모리에 풀리면 파일 크기보다 수 배 커지는 경우가 흔하다. 대응은 컬럼 프루닝·행 그룹 단위 청크 읽기·dtype 축소(category, 다운캐스팅)이거나, 규모가 지속적으로 크면 PySpark/Polars/DuckDB 같은 도구로 전환하는 것이다."
+  },
+  {
+    "id": "python-mcq-006",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "100만 건 레코드에 대해 50만 건짜리 참조 테이블로 룩업 조인을 할 때, 참조 데이터를 리스트가 아닌 딕셔너리로 구성해야 하는 이유는?",
+    "choices": [
+      "딕셔너리가 리스트보다 항상 메모리를 적게 쓰기 때문",
+      "딕셔너리는 삽입 순서를 보장하지 않아 캐시 효율이 좋기 때문",
+      "리스트 선형 탐색은 건당 O(n)이라 전체가 O(n*m)이 되지만, 딕셔너리는 해시 조회로 평균 O(1)이기 때문",
+      "리스트는 문자열 키를 저장할 수 없기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "`if key in list` 는 선형 탐색이므로 100만 x 50만 = 5000억 회 비교가 되어 사실상 끝나지 않는다. dict/set은 해시 테이블 기반으로 평균 O(1) 조회를 제공해 전체가 O(n+m)이 된다. 딕셔너리는 해시 테이블 오버헤드로 메모리를 더 쓰며(1번 오답), Python 3.7+ 딕셔너리는 삽입 순서를 보장한다(2번 오답)."
+  },
+  {
+    "id": "python-mcq-007",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "파이프라인 함수에 `def transform(df: pd.DataFrame) -> pd.DataFrame:` 처럼 타입 힌트를 붙였을 때의 효과로 옳은 것은?",
+    "choices": [
+      "런타임에 인자 타입이 검증되어 잘못된 타입을 넘기면 TypeError가 발생한다",
+      "인터프리터는 타입을 강제하지 않으며, mypy/pyright 같은 정적 검사기와 IDE·문서화에서 가치를 갖는다",
+      "타입 힌트가 있으면 CPython이 해당 함수를 C로 컴파일해 실행 속도가 빨라진다",
+      "타입 힌트는 메모리에 저장되지 않아 런타임에 조회할 수 없다"
+    ],
+    "answer_index": 1,
+    "explanation": "타입 힌트는 기본적으로 런타임 강제가 없는 주석이다. 가치는 mypy/pyright 정적 분석, IDE 자동완성, 그리고 데이터 계약 문서화에 있다. 다만 `__annotations__`로 런타임 조회는 가능하며(4번 오답), pydantic이나 typeguard처럼 이를 읽어 런타임 검증을 수행하는 라이브러리를 별도로 붙이면 1번 같은 동작을 만들 수 있다. 성능 향상 효과는 없다."
+  },
+  {
+    "id": "python-mcq-008",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "외부 REST API 5,000개 엔드포인트를 호출해 응답을 수집하는 작업(각 호출은 대부분 네트워크 대기)에 가장 적합한 방식은?",
+    "choices": [
+      "asyncio + aiohttp 또는 ThreadPoolExecutor — I/O 대기 중 GIL이 해제되므로 스레드/코루틴으로 높은 동시성을 얻을 수 있다",
+      "multiprocessing.Pool로 5,000개 프로세스를 띄운다",
+      "단일 스레드 동기 루프 — GIL 때문에 어떤 동시성 기법도 효과가 없다",
+      "numpy 벡터 연산으로 HTTP 호출을 배치화한다"
+    ],
+    "answer_index": 0,
+    "explanation": "I/O 바운드 작업은 GIL의 제약을 거의 받지 않는다. 소켓 대기 중에는 GIL이 해제되므로 스레드가 겹쳐 진행되고, asyncio는 단일 스레드 이벤트 루프에서 컨텍스트 스위칭 비용 없이 수천 개 동시 요청을 다룰 수 있어 자원 효율이 더 좋다. 프로세스는 생성 비용과 메모리 오버헤드가 커서 수천 개 I/O 대기에 부적합하고, GIL은 CPU-bound에만 결정적 제약이다."
+  },
+  {
+    "id": "python-mcq-009",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "`pd.read_csv(path, chunksize=100_000)`의 반환값과 활용 방식으로 옳은 것은?",
+    "choices": [
+      "전체를 읽되 내부적으로 10만 행씩 처리한 하나의 DataFrame을 반환한다",
+      "파일을 10만 행씩 잘라 디스크에 분할 저장한다",
+      "10만 행짜리 DataFrame을 순차적으로 내주는 이터레이터를 반환하므로, 청크별 부분 집계 후 최종 병합하는 패턴으로 써야 한다",
+      "청크마다 별도 프로세스를 생성해 자동으로 병렬 처리한다"
+    ],
+    "answer_index": 2,
+    "explanation": "chunksize를 주면 TextFileReader 이터레이터가 반환되어 청크 단위로 순회하게 된다. 메모리 상한을 지키려면 각 청크에서 필요한 컬럼만 남기고 부분 집계(sum/count 누적)를 한 뒤 마지막에 병합해야 한다. 청크 결과를 리스트에 모두 모아 `pd.concat` 하면 결국 전체를 메모리에 올리는 것과 같아져 목적을 잃는다는 점이 흔한 함정이다."
+  },
+  {
+    "id": "python-mcq-010",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "PySpark에서 일반 Python UDF가 내장 함수나 pandas UDF(Arrow 기반)보다 느린 주된 이유는?",
+    "choices": [
+      "Python UDF는 드라이버에서만 실행되어 병렬화되지 않기 때문",
+      "Python UDF는 Parquet 파일을 읽을 수 없어 CSV로 변환하기 때문",
+      "Python UDF는 항상 전체 데이터를 셔플하기 때문",
+      "행 단위로 JVM↔Python 워커 사이에 직렬화·역직렬화와 프로세스 간 통신이 발생하고, Catalyst 최적화 대상에서 제외되기 때문"
+    ],
+    "answer_index": 3,
+    "explanation": "일반 Python UDF는 각 executor의 Python 워커 프로세스로 데이터를 행 단위 피클 직렬화해 보내고 결과를 되받는다. 이 왕복 비용과 인터프리터 실행 비용이 크고, Catalyst에게는 블랙박스라 푸시다운·코드 생성 최적화도 막힌다. pandas UDF(및 Arrow UDF)는 Arrow 컬럼 배치로 묶어 전송해 왕복 횟수를 크게 줄인다. 가장 좋은 선택은 애초에 Spark 내장 함수로 표현하는 것이다."
+  },
+  {
+    "id": "python-mcq-011",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Linux에서 4GB DataFrame을 전역 변수로 둔 뒤 `multiprocessing.Pool(8)`로 워커를 fork해 처리했더니 메모리가 급증했다. 가장 정확한 설명은?",
+    "choices": [
+      "fork 시점에 각 자식이 4GB를 즉시 복사하므로 항상 32GB가 필요하다",
+      "fork는 copy-on-write지만 파이썬은 객체를 읽기만 해도 참조 카운트를 갱신하며 해당 페이지를 더럽혀 실제 복사가 유발된다",
+      "multiprocessing은 GIL을 공유하므로 메모리가 중복 할당된다",
+      "전역 변수는 항상 공유 메모리에 저장되므로 메모리 증가는 다른 원인이다"
+    ],
+    "answer_index": 1,
+    "explanation": "리눅스 fork는 copy-on-write라 이론상 읽기 전용 데이터는 공유되지만, CPython은 객체를 참조할 때마다 헤더의 참조 카운트를 증감시켜 해당 메모리 페이지를 쓰기(dirty) 상태로 만든다. 그 결과 읽기만 해도 페이지가 실제 복사되어 메모리가 워커 수에 비례해 늘어난다. 대응책은 큰 데이터를 numpy 배열/Arrow 버퍼나 `multiprocessing.shared_memory`로 두거나, 파일·객체 스토리지 경로만 넘기고 워커가 필요한 부분만 읽게 설계하는 것이다."
+  },
+  {
+    "id": "python-mcq-012",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "재시도 로직을 데코레이터로 구현할 때 `functools.wraps`를 사용해야 하는 이유는?",
+    "choices": [
+      "래퍼가 원본 함수의 __name__, __doc__, __wrapped__ 등 메타데이터를 유지해 로깅·문서화·디버깅과 pickle 기반 도구가 정상 동작하기 때문",
+      "wraps가 없으면 데코레이터가 함수 인자를 전달하지 못한다",
+      "wraps가 재시도 횟수를 자동으로 관리해 주기 때문",
+      "wraps가 예외를 자동으로 삼켜 파이프라인이 중단되지 않게 하기 때문"
+    ],
+    "answer_index": 0,
+    "explanation": "`functools.wraps`는 원본 함수의 이름·독스트링·모듈·어노테이션을 래퍼에 복사하고 `__wrapped__` 참조를 남긴다. 이것이 없으면 모든 태스크가 로그와 스택트레이스에서 `wrapper`로 보여 디버깅이 어렵고, Airflow 태스크명·inspect 기반 시그니처 조회·직렬화 도구가 오작동한다. 인자 전달은 `*args, **kwargs`가 담당하고, 재시도 횟수·예외 처리는 데코레이터 본문에서 직접 구현해야 한다."
+  },
+  {
+    "id": "python-mcq-013",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "카디널리티가 낮은 문자열 컬럼(예: 국가 코드 200종, 5,000만 행)의 pandas 메모리 사용량을 줄이는 가장 효과적인 방법은?",
+    "choices": [
+      "DataFrame을 pickle로 저장했다가 다시 읽는다",
+      "컬럼을 float64로 캐스팅한다",
+      "dtype을 category로 변경해 고유값 사전 + 정수 코드 배열로 저장한다",
+      "인덱스를 문자열 컬럼으로 지정한다"
+    ],
+    "answer_index": 2,
+    "explanation": "object dtype의 문자열 컬럼은 행마다 파이썬 문자열 객체 포인터를 갖는다. category dtype은 고유값을 한 번만 저장하고 각 행은 작은 정수 코드로 표현하므로, 카디널리티가 낮을수록 메모리가 극적으로 줄고 groupby/비교 연산도 빨라진다. 다만 고유값이 행 수에 가까우면 오히려 오버헤드가 되므로 카디널리티 비율을 먼저 확인해야 한다."
+  },
+  {
+    "id": "python-mcq-014",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "asyncio 기반 수집기에서 코루틴 안에 동기 DB 드라이버 호출(`cursor.execute(...)`)을 그대로 넣었을 때 발생하는 문제와 올바른 대응은?",
+    "choices": [
+      "문제없다 — asyncio가 동기 함수를 자동으로 스레드에 위임한다",
+      "해당 호출이 이벤트 루프 스레드를 블로킹해 모든 코루틴이 멈춘다 — asyncio.to_thread/run_in_executor로 오프로딩하거나 비동기 드라이버를 쓴다",
+      "GIL이 해제되므로 다른 코루틴이 정상 진행한다",
+      "await를 붙이기만 하면 동기 함수도 논블로킹으로 바뀐다"
+    ],
+    "answer_index": 1,
+    "explanation": "asyncio는 협력적(cooperative) 멀티태스킹이라 코루틴이 await로 제어권을 넘겨야 다른 태스크가 진행된다. 동기 블로킹 호출은 이벤트 루프 스레드를 점유하므로 무관한 수천 개의 요청까지 함께 정지한다. `await asyncio.to_thread(fn, ...)`나 `loop.run_in_executor(pool, fn, ...)`로 별도 스레드에 위임하거나, asyncpg/aiomysql 같은 네이티브 비동기 드라이버를 쓴다. GIL은 I/O 중 해제되지만 그것은 다른 '스레드'에 대한 이야기이고, 단일 이벤트 루프 스레드가 막힌 상황과는 별개다."
+  },
+  {
+    "id": "python-mcq-015",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "`ProcessPoolExecutor.map()`에 로컬에서 정의한 람다를 넘겼더니 `Can't pickle` 오류가 발생했다. 원인으로 옳은 것은?",
+    "choices": [
+      "람다는 반환값이 없어 워커가 결과를 보낼 수 없기 때문",
+      "ProcessPoolExecutor는 인자가 3개 이상인 함수만 지원하기 때문",
+      "람다는 GIL을 획득할 수 없어 자식 프로세스에서 실행이 불가능하기 때문",
+      "프로세스 간 태스크 전달은 pickle 직렬화에 의존하는데 람다·중첩 함수·로컬 클래스는 모듈 경로로 참조할 수 없어 picklable하지 않기 때문"
+    ],
+    "answer_index": 3,
+    "explanation": "pickle은 함수를 코드가 아니라 '모듈 경로 + 이름'으로 직렬화하므로, 최상위(top-level)에 이름이 있는 함수만 안전하게 전달된다. 람다, 클로저, 클래스 내부 로컬 함수는 그 참조가 불가능해 실패한다. 해결책은 최상위 함수로 승격하고 고정 인자는 `functools.partial`로 바인딩하거나, cloudpickle을 사용하는 실행기(예: Dask, PySpark)를 쓰는 것이다. 이는 PySpark 클로저가 워커로 넘어갈 때 전역 상태를 함께 끌고 가는 문제와도 같은 뿌리를 갖는다."
+  },
+  {
+    "id": "python-sub-001",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "Python의 GIL이 멀티스레드 기반 ETL 작업에 미치는 영향을 설명하고, 작업 유형별로 어떤 우회 전략을 선택할지 근거와 함께 설명하라.",
+    "model_answer": "GIL은 한 CPython 프로세스에서 동시에 하나의 스레드만 바이트코드를 실행하게 하는 락이다. 따라서 순수 파이썬 코드로 이루어진 CPU 바운드 작업(복잡한 문자열 파싱, 해시 계산, 압축·복호화 루프)은 스레드를 늘려도 처리량이 거의 늘지 않고 컨텍스트 스위칭 때문에 오히려 느려질 수 있다. 반면 I/O 바운드 작업(HTTP 호출, DB 쿼리, S3/HDFS 읽기, 파일 I/O)은 대기 중 GIL이 해제되므로 스레드로도 충분한 동시성을 얻는다. 또한 NumPy/pandas/pyarrow 같은 C 확장은 내부 연산 동안 GIL을 놓기 때문에 벡터 연산 위주 작업은 스레드로도 병렬 효과가 있다. 전략 선택: (1) I/O 바운드 소수~수백 동시성 → ThreadPoolExecutor(코드 변경 최소). (2) I/O 바운드 수천 이상 동시성 → asyncio + aiohttp/asyncpg (스레드당 스택 비용과 스위칭 오버헤드 회피). (3) 순수 파이썬 CPU 바운드 → multiprocessing/ProcessPoolExecutor로 프로세스별 GIL을 확보하되, 프로세스 간 데이터 전달은 pickle 비용이 크므로 큰 객체 대신 파일 경로·오프셋을 넘기고 워커가 직접 읽게 한다. (4) 데이터 규모가 단일 머신을 넘으면 PySpark/Ray/Dask로 분산 처리 — 이 경우 executor마다 별도 파이썬 프로세스가 뜨므로 GIL은 병목이 아니다. (5) 연산 자체를 벡터화(NumPy/pandas/Polars)하거나 네이티브 라이브러리로 밀어내면 GIL 구간 자체가 줄어든다. 참고로 CPython 3.13부터 free-threaded(GIL 비활성) 빌드가 실험적으로 제공되지만, C 확장 생태계 호환성 문제로 프로덕션 데이터 스택에서는 아직 기본 선택지가 아니다.",
+    "keywords": [
+      "GIL",
+      "CPU 바운드 vs I/O 바운드",
+      "multiprocessing",
+      "asyncio/ThreadPoolExecutor",
+      "C 확장 GIL 해제"
+    ],
+    "explanation": "GIL 질문의 변별점은 정의가 아니라 '작업 유형 분류 → 도구 선택'의 판단 과정이다. C 확장이 GIL을 놓는다는 점과 프로세스 간 직렬화 비용까지 언급하면 실무 경험 신호가 된다."
+  },
+  {
+    "id": "python-sub-002",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "메모리 8GB인 단일 서버에서 10GB CSV 파일을 읽어 특정 컬럼 기준 그룹별 합계를 구해야 한다. 가능한 접근법들을 제시하고 각각의 트레이드오프를 설명하라.",
+    "model_answer": "접근법: (1) 청크 스트리밍 — `pd.read_csv(path, chunksize=N, usecols=[...], dtype={...})`로 청크별 groupby-sum을 구해 누적 딕셔너리나 작은 DataFrame에 합산한다. 합계는 결합법칙이 성립하므로 부분 집계 병합이 정확하다. 장점: 메모리 상한 통제, 추가 인프라 불필요. 단점: 코드가 장황하고, 중앙값·distinct count처럼 결합 불가능한 집계에는 그대로 적용할 수 없다. (2) 순수 파이썬 제너레이터 + csv 모듈 + collections.defaultdict — 의존성이 가장 가볍고 메모리도 최소지만 파싱이 느리다. (3) 컬럼 축소·타입 최적화 — usecols로 필요한 컬럼만 읽고 int64→int32, object→category로 다운캐스팅하면 실제 사용 메모리가 수 배 줄어 통째 적재가 가능해질 수도 있다. (4) DuckDB/Polars 사용 — `SELECT k, sum(v) FROM read_csv_auto(...) GROUP BY k` 한 줄로 처리 가능하며, 두 도구 모두 아웃오브코어(스트리밍/스필) 실행과 멀티코어를 지원해 pandas보다 훨씬 빠르고 메모리 안전하다. 단일 머신 시나리오에서 실무적으로 가장 좋은 선택인 경우가 많다. (5) 사전 포맷 변환 — CSV를 Parquet으로 한 번 변환해 두면 컬럼 프루닝·압축·타입 보존 덕에 이후 모든 조회가 저렴해진다. 반복 작업이면 최우선 고려 대상이다. (6) PySpark — 데이터가 계속 커지고 다른 대용량 소스와 조인해야 하면 분산으로 가지만, 10GB 단일 파일 한 번의 집계에는 클러스터 오버헤드가 더 크다. 판단 기준: 일회성·단일 머신이면 DuckDB/Polars 또는 pandas 청크, 반복·확장 가능성이 있으면 Parquet 변환 + 컬럼 지향 엔진, 데이터가 TB급으로 성장 중이면 분산 처리로 이관한다.",
+    "keywords": [
+      "chunksize 부분 집계",
+      "usecols/dtype 다운캐스팅",
+      "DuckDB/Polars 아웃오브코어",
+      "Parquet 변환",
+      "결합 가능한 집계"
+    ],
+    "explanation": "'Spark 쓰면 됩니다'로 끝내지 않고 규모에 맞는 단일 머신 해법과 그 한계를 구분하는지 보는 문제다. 결합 가능한 집계와 그렇지 않은 집계(중앙값, distinct)를 구분하면 좋은 답변이다."
+  },
+  {
+    "id": "python-sub-003",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "제너레이터와 이터레이터를 활용해 메모리 효율적인 스트리밍 ETL 파이프라인을 설계하는 방법과, 이 방식이 갖는 주의점을 설명하라.",
+    "model_answer": "설계: 각 변환 단계를 제너레이터 함수로 만들고 서로 연결한다. 예: `records = parse(read_lines(path))` → `cleaned = (normalize(r) for r in records)` → `valid = (r for r in cleaned if is_valid(r))` → `for batch in chunked(valid, 1000): sink.write(batch)`. 각 단계는 값을 요청받을 때만 계산하므로 전체 데이터가 아니라 한 번에 한 레코드(또는 한 배치)만 메모리에 존재한다. itertools(islice, chain, groupby, tee)와 `yield from`으로 조합성을 높일 수 있고, 싱크 쓰기는 배치로 묶어 I/O 왕복을 줄인다. 장점: 메모리 사용량이 데이터 크기와 무관하게 상수 수준이며, 파이프라인 각 단계가 독립적으로 테스트 가능하고, 무한 스트림(Kafka 컨슈머 루프 등)에도 그대로 적용된다. 주의점: (1) 일회성 소비 — 제너레이터는 한 번 순회하면 소진되므로 두 번 쓰려면 다시 만들거나 itertools.tee를 써야 하고, tee는 내부적으로 버퍼링하므로 소비 속도 차이가 크면 메모리를 잡아먹는다. (2) 지연 평가로 인한 예외 시점 이동 — 오류가 제너레이터 생성 시점이 아니라 소비 시점에 터져 스택트레이스 해석이 어렵고, try/except 위치를 잘못 잡으면 잡히지 않는다. (3) 리소스 수명 — 제너레이터 안에서 파일·커넥션을 열면 소비가 중단될 때 close/GeneratorExit 처리가 필요하다. contextlib로 감싸거나 `finally`에서 정리한다. (4) 전역 정렬·조인·중앙값처럼 전체를 봐야 하는 연산은 스트리밍만으로 불가능하므로 외부 정렬이나 집계 엔진이 필요하다. (5) 체크포인트·재처리 — 스트리밍은 진행 상황이 보이지 않으므로 처리 건수 카운터와 오프셋 커밋 지점을 명시적으로 설계해야 한다.",
+    "keywords": [
+      "yield 지연 평가",
+      "제너레이터 파이프라인 체이닝",
+      "itertools/배치 처리",
+      "일회성 소비",
+      "리소스 정리/예외 시점"
+    ],
+    "explanation": "제너레이터는 파이썬 ETL의 기본 도구지만, 일회성 소비와 지연 예외라는 두 함정이 실제 버그를 만든다. 장점만이 아니라 이 함정을 함께 말하는지가 변별점이다."
+  },
+  {
+    "id": "python-sub-004",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "asyncio로 외부 API 수천 건을 수집하는 인제스천 모듈을 설계한다고 하자. 동시성 제어, 재시도, 실패 처리 관점에서 어떤 요소를 반드시 넣어야 하는지 설명하라.",
+    "model_answer": "구성 요소: (1) 동시성 상한 — `asyncio.Semaphore(N)`로 동시 진행 요청 수를 제한한다. 무제한으로 태스크를 만들면 상대 API에 429/스로틀링을 유발하고, 로컬에서도 소켓·파일 디스크립터가 고갈된다. aiohttp의 TCPConnector(limit, limit_per_host)도 함께 설정한다. (2) 세션 재사용 — ClientSession을 한 번 만들어 커넥션 풀을 공유한다. 요청마다 세션을 만들면 TCP/TLS 핸드셰이크 비용이 반복된다. (3) 타임아웃 — 전체(total)와 연결·읽기 타임아웃을 명시한다. 기본값에 의존하면 한 요청이 무한 대기해 잡이 영원히 끝나지 않는다. (4) 재시도와 백오프 — 429/5xx/타임아웃 등 일시적 오류에만 지수 백오프 + 지터로 재시도하고, 4xx(400/401/404) 같은 영구 오류는 즉시 실패시킨다. Retry-After 헤더가 있으면 존중한다. 재시도는 멱등한 요청(GET 등)에 한정하거나 idempotency key를 사용한다. (5) 부분 실패 격리 — `asyncio.gather(..., return_exceptions=True)`로 한 건 실패가 전체를 취소하지 않게 하고, 실패 건은 사유와 함께 데드레터(파일/테이블)에 적재해 재처리 가능하게 한다. (6) 블로킹 금지 — 코루틴 안에서 동기 DB 드라이버·무거운 CPU 파싱을 직접 호출하면 이벤트 루프가 멈춘다. `asyncio.to_thread`나 프로세스 풀로 오프로딩한다. (7) 스트리밍 소비 — 응답을 전부 리스트에 모으면 메모리가 터지므로 `asyncio.as_completed`나 큐로 완료되는 대로 싱크에 배치 기록한다. (8) 관측성과 종료 — 성공/실패/재시도 카운터와 지연 분포를 로깅하고, 취소·SIGTERM 시 진행 중 태스크를 정리(cancel + await)한 뒤 커넥션을 닫는다. (9) 멱등성 — 재실행 시 중복이 생기지 않도록 싱크에 upsert 키나 처리 완료 오프셋을 남긴다.",
+    "keywords": [
+      "Semaphore 동시성 제한",
+      "지수 백오프/지터",
+      "return_exceptions/데드레터",
+      "타임아웃",
+      "이벤트 루프 블로킹 회피"
+    ],
+    "explanation": "비동기 수집기는 '빠르게 만드는 것'보다 '상대 시스템과 자신을 보호하는 것'이 설계의 본질이다. 동시성 상한, 타임아웃, 부분 실패 격리가 빠지면 반드시 운영에서 문제가 된다."
+  },
+  {
+    "id": "python-sub-005",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "pandas와 PySpark의 처리 모델 차이를 설명하고, 어떤 기준으로 둘 중 하나를 선택하거나 전환해야 하는지 논하라.",
+    "model_answer": "처리 모델 차이: (1) 실행 위치 — pandas는 단일 프로세스 인메모리, PySpark는 드라이버가 계획을 만들고 여러 executor가 분산 실행한다. (2) 평가 방식 — pandas는 즉시(eager) 평가로 각 연산 결과가 바로 만들어져 디버깅이 직관적이다. PySpark는 지연(lazy) 평가로 액션(collect/count/write)이 호출될 때 Catalyst가 전체 계획을 최적화(조건 푸시다운, 컬럼 프루닝, 조인 재배치)한 뒤 실행한다. (3) 인덱스 — pandas는 인덱스 개념과 행 순서를 유지하지만 Spark DataFrame에는 인덱스가 없고 순서 보장도 없다. 순서가 필요하면 명시적 정렬이나 윈도우 함수가 필요하다. (4) 실패 모드 — pandas는 메모리 초과 시 MemoryError/OOM Kill, Spark는 셔플·스큐·executor OOM 같은 분산 고유의 문제와 태스크 재시도가 있다. (5) 지연 시간 — Spark는 잡 제출·스케줄링 오버헤드가 있어 작은 데이터에서는 pandas보다 훨씬 느리다. 선택 기준: 데이터가 단일 머신 메모리의 대략 1/3~1/2 이내로 들어오고 반복 탐색·시각화가 목적이면 pandas(또는 더 빠른 대안인 Polars/DuckDB)가 맞다. 원본이 수백 GB~TB이거나 여러 대용량 소스를 조인해야 하거나 이미 데이터 레이크/클러스터가 있으면 PySpark가 맞다. 전환 신호: 메모리 여유 부족으로 잦은 OOM, 처리 시간이 배치 SLA를 넘김, 데이터 증가 추세가 하드웨어 증설 속도보다 빠름, 여러 소스 조인이 필요해짐. 실무 패턴: 대용량 집계·조인은 Spark로 수행해 결과를 작게 줄인 뒤 `toPandas()`로 가져와 pandas/시각화로 마무리한다(단, toPandas는 드라이버 메모리에 전부 올리므로 크기 확인 필수, Arrow 활성화로 전송 비용 절감). 코드 자산을 유지하며 옮기고 싶으면 pandas API on Spark(pyspark.pandas)를 쓰되 일부 API 미지원과 인덱스 구현 비용을 감안한다.",
+    "keywords": [
+      "단일 머신 vs 분산",
+      "eager vs lazy(Catalyst)",
+      "인덱스/순서 보장 차이",
+      "toPandas 드라이버 OOM",
+      "pandas API on Spark"
+    ],
+    "explanation": "두 도구를 '큰 데이터 = Spark'로 단순 대비하는 답이 흔하다. 평가 모델, 인덱스 유무, 소규모 데이터에서의 Spark 오버헤드, 전환 임계와 하이브리드 패턴까지 말할 수 있는지가 변별점이다."
+  },
+  {
+    "id": "python-sub-006",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "PySpark 잡에서 Python UDF가 성능 병목이 되었을 때 진단 순서와 개선 방안을 단계별로 설명하라.",
+    "model_answer": "진단: Spark UI에서 해당 스테이지의 태스크 시간 분포와 Python 워커 관련 시간을 확인하고, 동일 로직을 UDF 없이 수행했을 때와 비교해 UDF 구간이 실제 병목인지 격리한다. executor 로그에서 Python 워커 OOM이나 잦은 재시작이 있는지도 본다. 개선 방안(우선순위 순): (1) UDF 제거 — 대부분의 변환은 Spark 내장 함수(F.when, F.regexp_extract, F.from_json, F.split, 날짜/문자열 함수)나 SQL 표현식으로 표현 가능하다. 내장 함수는 JVM에서 실행되고 Catalyst 최적화와 코드 생성(Tungsten) 대상이므로 왕복 직렬화가 아예 없다. (2) pandas UDF(벡터화 UDF) 또는 Arrow UDF로 전환 — 행 단위 피클 왕복 대신 Arrow 컬럼 배치로 전송되어 오버헤드가 크게 준다. Series→Series, Iterator[Series]→Iterator[Series](모델·커넥션 등 무거운 초기화를 배치 간 재사용), grouped map 등 용도에 맞는 타입을 고른다. (3) 배치 크기 조정 — `spark.sql.execution.arrow.maxRecordsPerBatch`(기본 10,000)가 레코드가 큰 경우 Python 워커 OOM의 원인이 되므로 낮추고, 반대로 작은 레코드에서는 올려 왕복을 줄인다. (4) 초기화 비용 분리 — UDF 본문에서 매 호출마다 모델 로드·커넥션 생성을 하지 않도록 mapInPandas/Iterator UDF나 모듈 수준 지연 초기화로 파티션당 1회만 수행한다. (5) 데이터 감축 — UDF 적용 전에 필터·컬럼 선택·중복 제거로 UDF가 처리할 행 수를 줄이고, 카디널리티가 낮으면 distinct 입력에만 적용한 뒤 조인으로 되붙인다. (6) 스큐 확인 — 특정 파티션에 데이터가 몰려 소수 태스크만 오래 걸리는 것이라면 UDF가 아니라 파티셔닝 문제이므로 재파티셔닝/솔팅으로 해결한다. (7) 최후 수단 — 로직이 본질적으로 파이썬 라이브러리(예: 특정 NLP·과학 계산)에 묶여 있다면 mapInArrow/mapInPandas로 파티션 단위 처리하며 벡터화하거나, 해당 로직을 Scala/Java UDF로 재구현한다.",
+    "keywords": [
+      "내장 함수 우선",
+      "pandas/Arrow UDF 벡터화",
+      "maxRecordsPerBatch",
+      "파티션당 1회 초기화",
+      "직렬화 왕복 비용"
+    ],
+    "explanation": "핵심 순서는 'UDF 제거 → 벡터화 → 배치/초기화 튜닝 → 데이터 감축'이다. 곧바로 설정값 조정으로 뛰는 답변보다, 표현식으로 대체 가능한지부터 검토하는 답변이 좋다."
+  },
+  {
+    "id": "python-sub-007",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "장시간 실행되는 파이썬 ETL 워커의 메모리 사용량이 계속 증가한다. Python의 메모리 관리 방식을 근거로 원인 후보와 진단 방법을 설명하라.",
+    "model_answer": "메모리 관리 방식: CPython은 참조 카운팅을 기본으로 하고, 참조 카운트가 0이 되면 즉시 해제한다. 여기에 순환 참조를 회수하기 위한 세대별(generational) GC가 보조로 동작한다. 또한 해제된 메모리는 pymalloc의 arena/pool로 반환되지만, 단편화 등의 이유로 OS에 즉시 반납되지 않아 RSS가 줄지 않는 경우가 흔하다. 원인 후보: (1) 진짜 누수 — 전역 리스트/딕셔너리에 결과를 계속 append, 무제한 캐시(`functools.lru_cache(maxsize=None)`), 모듈 수준 레지스트리, 로거 핸들러·커넥션 누적. (2) 순환 참조 + `__del__` — 순환 구조에 소멸자가 얽히면 회수가 지연되거나(구버전) GC 부담이 커진다. (3) C 확장 누수 — numpy/pyarrow/DB 드라이버 등 네이티브 레벨 누수는 파이썬 객체 추적으로 보이지 않고 RSS만 증가한다. (4) 단편화 — 큰 임시 객체를 반복 생성/해제하면 해제는 되지만 RSS가 유지된다. (5) 예외 트레이스백 보관 — 예외 객체를 변수에 저장하면 트레이스백이 프레임과 그 안의 대용량 지역 변수를 붙잡는다. (6) 배치 누적 — 청크 처리 결과를 리스트에 모아 마지막에 concat하는 패턴. 진단 방법: `tracemalloc`으로 스냅샷을 주기적으로 찍어 할당 지점별 증가량을 비교, `gc.get_objects()`/`objgraph`로 타입별 객체 수 추이 확인, `gc.set_debug(gc.DEBUG_LEAK)`로 회수 불가 객체 탐지, `psutil`로 RSS 추이를 로깅해 파이썬 힙 증가와 RSS 증가가 일치하는지 비교(불일치면 C 확장/단편화 의심), 메모리 프로파일러(memray, memory_profiler)로 함수별 프로파일링. 완화 전략: 배치 단위로 결과를 즉시 싱크에 쓰고 참조를 끊기, 캐시에 maxsize·TTL 부여, 워커를 일정 태스크 수마다 재시작(`maxtasksperchild`, Celery의 max-tasks-per-child)해 단편화·누수를 리셋, 큰 객체는 `del` 후 필요 시 `gc.collect()` 호출, 컨테이너에 메모리 리밋을 걸어 조기 감지.",
+    "keywords": [
+      "참조 카운팅 + 세대별 GC",
+      "순환 참조",
+      "tracemalloc/memray",
+      "RSS 미반환·단편화",
+      "maxtasksperchild 워커 재시작"
+    ],
+    "explanation": "'메모리 누수'를 참조 카운팅/GC/할당자 레이어로 나눠 설명하고, 파이썬 힙 증가와 RSS 증가를 구분해 진단할 수 있는지가 고급 신호다. 워커 재시작이라는 현실적 완화책까지 말하면 좋다."
+  },
+  {
+    "id": "python-sub-008",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "PySpark 잡이 로컬에서는 동작하는데 클러스터에서 `ModuleNotFoundError`나 라이브러리 버전 불일치로 실패한다. 파이썬 환경·의존성 배포 관점에서 원인과 해결 방법을 설명하라.",
+    "model_answer": "원인: PySpark는 드라이버와 각 executor에서 별도의 파이썬 인터프리터 프로세스를 띄운다. 로컬 개발 환경의 가상환경은 클러스터 노드에 존재하지 않으므로, 직접 설치하지 않은 서드파티 패키지는 executor에서 임포트에 실패한다. 또한 드라이버와 executor의 파이썬 마이너 버전이 다르면 pickle 프로토콜·바이트코드 차이로 직렬화 오류가 나고, 노드마다 설치된 패키지 버전이 제각각이면 재현 불가능한 버그가 생긴다. 해결 방법: (1) 환경 패키징 배포 — conda-pack이나 venv-pack으로 가상환경 전체를 아카이브로 묶어 `spark-submit --archives env.tar.gz#env`로 배포하고, `spark.pyspark.python`/`PYSPARK_PYTHON`을 아카이브 내부 인터프리터 경로로 지정한다. 노드에 사전 설치가 필요 없고 잡별로 환경을 고정할 수 있어 가장 널리 쓰인다. (2) 순수 파이썬 소량 의존성 — `--py-files`로 .py/.zip/.egg를 배포하거나 `sc.addPyFile()`을 사용한다. 다만 컴파일된 확장(C 확장)을 포함한 휠에는 부적합하다. (3) 컨테이너 이미지 — Kubernetes에서 Spark를 실행한다면 파이썬 환경을 포함한 이미지를 빌드해 드라이버·executor가 동일 이미지를 쓰게 하는 것이 가장 확실하다. (4) 클러스터 사전 설치 — 부트스트랩 스크립트로 모든 노드에 동일 버전을 설치(관리형 서비스의 부트스트랩 액션 등). 노드 수가 많고 변경이 잦으면 관리 비용이 크다. (5) 버전 고정 — requirements/lock 파일로 버전을 못박고, 드라이버·executor 파이썬 버전이 같은지 런타임에 검증하는 어설션을 잡 시작 시 넣는다. (6) 자체 코드 배포 — 프로젝트 코드는 휠로 빌드해 환경 아카이브에 포함시키면 상대 임포트 경로 문제를 피할 수 있다. 진단 팁: executor 로그(stderr)에서 실제 임포트 실패 모듈명을 확인하고, `sys.executable`·`sys.version`·패키지 버전을 executor에서 출력하는 작은 잡을 돌려 드라이버와 비교한다. 여기엔 --py-files 한계가 있다.",
+    "keywords": [
+      "PYSPARK_PYTHON",
+      "venv-pack/conda-pack --archives",
+      "--py-files 한계",
+      "드라이버/executor 버전 일치",
+      "컨테이너 이미지"
+    ],
+    "explanation": "파이썬 데이터 엔지니어가 실제로 가장 자주 겪는 배포 문제다. 드라이버와 executor가 별개의 파이썬 프로세스라는 구조적 이해에서 해법이 도출되는지를 본다."
+  },
+  {
+    "id": "python-mcq-016",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "`def collect(rec, errors=[]):` 처럼 리스트를 기본 인자로 둔 수집 함수를 배치에서 반복 호출했더니 이전 배치의 오류가 계속 누적되어 나타났다. 원인은?",
+    "choices": [
+      "기본 인자는 호출할 때마다 새로 평가되지만 가비지 컬렉션이 지연되기 때문",
+      "리스트는 전역 스코프에 자동 등록되어 모든 함수가 공유하기 때문",
+      "기본값 객체는 함수 정의 시점에 한 번만 생성되어 모든 호출이 같은 리스트를 공유하기 때문",
+      "빈 리스트는 파이썬 내부에서 싱글턴으로 캐시되기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "기본 인자 표현식은 `def` 문이 실행되는 정의 시점에 단 한 번 평가되어 `func.__defaults__`에 저장된다. 따라서 가변 객체(list, dict, set)를 기본값으로 두면 모든 호출이 같은 객체를 공유해 상태가 누적된다. 장시간 도는 워커에서는 이 리스트가 계속 커져 메모리 누수로도 이어진다. 정석은 `def collect(rec, errors=None): errors = [] if errors is None else errors` 패턴이다. 같은 이유로 `datetime.now()`를 기본값으로 두면 프로세스 시작 시각이 영원히 고정되는 버그가 생긴다."
+  },
+  {
+    "id": "python-mcq-017",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "테이블 목록을 순회하며 `for t in tables: tasks.append(lambda: load(t))` 로 태스크를 만들고 나중에 실행했더니 모든 태스크가 마지막 테이블만 처리했다. 올바른 설명은?",
+    "choices": [
+      "클로저가 변수 t의 값이 아니라 변수 자체를 참조하므로, 실행 시점에는 루프가 끝난 뒤의 마지막 값을 읽는다",
+      "람다는 인자를 받지 않으면 항상 마지막으로 정의된 것만 남는다",
+      "리스트에 추가된 함수 객체는 동일 코드 객체를 공유하므로 하나만 유효하다",
+      "for 루프의 변수는 루프 종료 시 삭제되므로 임의의 값이 들어간다"
+    ],
+    "answer_index": 0,
+    "explanation": "파이썬 클로저는 값이 아니라 변수 바인딩(셀)을 캡처하는 늦은 바인딩(late binding) 방식이다. 람다가 실제로 호출될 때 `t`를 조회하므로 루프 종료 후의 최종값이 쓰인다. 해결책은 (1) 기본 인자로 값 고정 `lambda t=t: load(t)`, (2) `functools.partial(load, t)`, (3) 값을 인자로 받는 팩토리 함수로 감싸기다. Airflow DAG에서 루프로 태스크를 동적 생성할 때, 그리고 PySpark에서 루프로 만든 클로저를 액션에 넘길 때 실제로 자주 터지는 버그다."
+  },
+  {
+    "id": "python-mcq-018",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "결제 금액 수천만 건을 `float`로 합산했더니 원장 시스템과 소수점 이하에서 오차가 누적되었다. 가장 정확한 진단과 대응은?",
+    "choices": [
+      "파이썬 float가 32비트라 정밀도가 부족하다 — numpy.float64로 바꾸면 해결된다",
+      "float는 이진 부동소수점이라 0.1 같은 십진 소수를 정확히 표현하지 못하고 합산 시 오차가 누적된다 — Decimal 또는 정수 최소단위(센트) 저장으로 바꾼다",
+      "파이썬 int에 오버플로가 발생한 것이므로 int로 캐스팅하면 해결된다",
+      "합산 순서와 무관하게 float 연산은 항상 동일한 결과를 주므로 오차는 소스 데이터 문제다"
+    ],
+    "answer_index": 1,
+    "explanation": "파이썬 float는 IEEE 754 배정밀도(64비트)이며 문제는 비트 수가 아니라 이진 표현으로 십진 소수를 정확히 담을 수 없다는 점이다(0.1 + 0.2 != 0.3). 대량 합산에서는 이 미세 오차가 누적되고, 분산 처리에서는 파티션별 합산 순서가 실행마다 달라 결과 자체가 비결정적이 된다(4번 오답). 금액은 `decimal.Decimal`을 쓰거나 최소 통화 단위 정수로 저장하고, 저장 포맷에서는 Parquet/Hive의 `DECIMAL(p,s)` 타입을 쓴다. 파이썬 int는 임의 정밀도라 오버플로가 없다(3번 오답)."
+  },
+  {
+    "id": "python-mcq-019",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "수집 파이프라인에서 `datetime.now()`로 찍은 시각과 소스에서 받은 UTC 타임스탬프를 비교하다 `TypeError: can't compare offset-naive and offset-aware datetimes`가 발생했다. 올바른 설명과 대응은?",
+    "choices": [
+      "datetime.now()는 서버 로케일에 따라 자동으로 UTC가 되므로 코드가 아니라 서버 설정 문제다",
+      "파이썬은 시간 비교를 지원하지 않으므로 epoch 정수로만 비교해야 한다",
+      "naive datetime은 항상 UTC로 간주되므로 소스 데이터의 타임존 표기를 제거하면 된다",
+      "naive datetime은 tzinfo가 없어 어느 시점인지 확정되지 않으므로 aware와 비교가 금지된다 — 경계에서 `datetime.now(timezone.utc)`처럼 aware UTC로 정규화한다"
+    ],
+    "answer_index": 3,
+    "explanation": "naive datetime은 타임존 정보가 없어 절대 시점으로 확정되지 않으므로, 파이썬은 잘못된 비교를 막기 위해 TypeError를 낸다. `datetime.now()`는 서버 로컬 시간대의 naive 값이라 서버마다 다른 값을 만든다(1번 오답). 원칙은 (1) 시스템 경계에서 즉시 aware UTC로 변환해 내부는 전부 UTC로 다루고, (2) 표시 단계에서만 `zoneinfo.ZoneInfo('Asia/Seoul')`로 변환하며, (3) 파티션 키로 쓰는 날짜는 어느 타임존 기준인지 명시하는 것이다. naive를 UTC로 '간주'하는 3번은 실제로 KST 값을 UTC로 오해해 9시간 어긋난 파티션을 만드는 대표적 사고 패턴이다."
+  },
+  {
+    "id": "python-mcq-020",
+    "category": "python",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "multiprocessing의 시작 방식(start method)인 fork와 spawn의 차이로 옳은 것은?",
+    "choices": [
+      "fork는 부모 프로세스의 메모리 상태를 그대로 복제해 빠르지만 스레드·락 상태까지 물려받아 교착에 취약하고, spawn은 인터프리터를 새로 띄워 안전하지만 모듈 재임포트와 인자 pickle 비용이 든다",
+      "spawn은 부모 메모리를 공유하므로 큰 DataFrame을 복사 없이 전달할 수 있다",
+      "fork는 Windows에서만, spawn은 Linux에서만 사용할 수 있다",
+      "두 방식은 성능만 다를 뿐 자식 프로세스에서 관찰되는 전역 상태는 동일하다"
+    ],
+    "answer_index": 0,
+    "explanation": "fork는 부모의 주소 공간을 copy-on-write로 복제하므로 전역 변수·열린 커넥션이 그대로 보이고 시작이 빠르지만, 부모가 멀티스레드일 때 fork 시점에 잠겨 있던 락이 자식에 잠긴 채로 복제되어 교착이 발생할 수 있다. spawn은 새 인터프리터를 띄우고 대상 모듈을 재임포트하므로 전역 상태가 초기화되고 인자·함수가 picklable해야 하며(`if __name__ == \"__main__\":` 가드 필수), 시작이 느린 대신 안전하다. 이 위험 때문에 CPython 3.14부터 POSIX 기본 시작 방식이 fork에서 forkserver로 바뀌었으므로, 상속된 전역 상태나 커넥션에 의존하던 코드는 업그레이드 시 재검증이 필요하다. 방식은 OS별 기본값이 다를 뿐 `multiprocessing.set_start_method()`로 선택 가능하다(3번 오답)."
+  },
+  {
+    "id": "python-sub-009",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "수천만 건의 레코드를 파이썬 프로세스 안에서 표현해야 할 때 dict, tuple/NamedTuple, dataclass, __slots__ 클래스, 컬럼 지향 구조(numpy/Arrow) 중 무엇을 선택할지 기준을 설명하라.",
+    "model_answer": "배경: CPython 객체는 헤더(타입 포인터 + 참조 카운트)만으로도 수십 바이트를 쓰고, 일반 클래스 인스턴스는 속성 저장을 위한 `__dict__`를 별도로 갖는다. 따라서 '레코드 하나 = 파이썬 객체 하나' 모델은 건수가 커질수록 데이터 자체보다 객체 오버헤드가 더 커진다. 선택지별 특성: (1) dict — 가장 유연하고 JSON과 매핑이 자연스럽지만, 레코드마다 해시 테이블과 키 문자열 참조를 유지해 메모리가 가장 크고 오타가 런타임까지 숨는다. 스키마가 유동적인 인제스천 초입 단계에 한정하는 것이 좋다. (2) tuple / NamedTuple — 필드가 고정 슬롯에 저장되어 dict 대비 훨씬 가볍고 불변이라 안전하다. NamedTuple은 이름 접근과 타입 힌트를 제공하면서 tuple의 메모리 특성을 유지해, 대량 레코드의 기본 선택지로 적합하다. 단 필드 수정이 필요하면 `_replace`로 새 객체를 만들어야 한다. (3) dataclass — 가독성과 기본값·메서드 정의에 좋지만 기본적으로는 일반 클래스라 `__dict__` 오버헤드가 있다. `@dataclass(slots=True)`(3.10+)를 주면 `__slots__`가 생성되어 메모리가 크게 줄고 속성 접근도 빨라지므로, 대량 처리에서는 slots를 켜는 것이 사실상 기본이다. `frozen=True`를 더하면 불변성과 해시 가능성도 얻는다. (4) `__slots__` 클래스 — 동적 속성 추가를 포기하는 대신 `__dict__`를 제거해 인스턴스당 메모리를 절감한다. 다만 상속 계층에서 slots 정의를 빠뜨리면 효과가 사라진다. (5) 컬럼 지향(numpy 배열, pandas/Polars, pyarrow Table) — 값들을 연속된 네이티브 버퍼에 담아 객체 오버헤드가 아예 없고 벡터 연산·SIMD·캐시 지역성 이점을 얻는다. 수천만 건 규모의 집계·필터·조인이 목적이라면 애초에 행 단위 파이썬 객체를 만들지 않는 것이 정답이며, 이것이 가장 큰 차이를 만든다. 판단 기준: 레코드를 '한 건씩 흘려보내며(streaming) 개별 처리'한다면 제너레이터 + NamedTuple 또는 slots dataclass로 상수 메모리를 유지하고, '전체를 모아 집계·분석'한다면 처음부터 컬럼 지향 구조나 외부 엔진(DuckDB/Polars/Spark)으로 밀어낸다. 유지보수 관점에서는 파이프라인 경계(입출력 계약)에는 타입이 명시된 dataclass/NamedTuple을 두어 스키마를 문서화하고, 내부 핫 루프에서는 필요 최소한의 표현으로 낮추는 계층 분리가 실무적이다. 측정 없이 추정하지 말고 `sys.getsizeof`와 `tracemalloc`, pandas의 `memory_usage(deep=True)`로 실제 사용량을 확인해 선택을 검증해야 한다.",
+    "keywords": [
+      "객체 헤더/__dict__ 오버헤드",
+      "__slots__ / dataclass(slots=True)",
+      "NamedTuple 불변 경량",
+      "컬럼 지향(numpy/Arrow)",
+      "스트리밍 vs 전체 집계"
+    ],
+    "explanation": "메모리 문제를 '리스트에 담지 마세요' 수준이 아니라 CPython 객체 모델 관점에서 설명하고, 결국 대량 처리에서는 행 단위 객체 자체를 피하는 것이 답이라는 결론에 도달하는지가 변별점이다."
+  },
+  {
+    "id": "python-sub-010",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "매일 수억 건을 처리하는 파이썬 ETL에서 예외 처리 전략을 어떻게 설계할지 설명하라. 어떤 오류는 즉시 실패시키고 어떤 오류는 건너뛰어야 하는가?",
+    "model_answer": "기본 원칙은 오류를 '레코드 단위 오류'와 '잡 단위 오류'로 분류하고, 전자는 격리해 계속 진행하되 반드시 기록하고, 후자는 즉시 실패시켜 잘못된 결과가 하류로 퍼지지 않게 하는 것이다. (1) 레코드 단위(스킵 대상) — 개별 레코드의 스키마 불일치, 파싱 실패, 값 범위 위반처럼 데이터 품질 문제. 해당 레코드를 원문·에러 사유·오프셋과 함께 데드레터 테이블/경로에 적재하고 카운터를 증가시킨다. 중요한 것은 '조용한 스킵'을 만들지 않는 것으로, 실패율이 임계치(예: 0.1%)를 넘으면 잡을 실패시키는 임계 기반 중단을 함께 둔다. 임계가 없으면 소스 스키마가 통째로 바뀐 날 전량이 스킵되고 빈 테이블이 성공으로 기록된다. (2) 잡 단위(즉시 실패) — 설정 오류, 인증 실패, 대상 테이블/스키마 부재, 필수 소스 파티션 누락, 디스크·메모리 고갈. 이들은 재시도해도 자체 회복되지 않고 부분 결과를 쓰면 오히려 오염되므로 빠르게 실패(fail fast)시키는 것이 옳다. (3) 일시적 오류(재시도 대상) — 네트워크 타임아웃, 5xx, 429, 커넥션 리셋, 일시적 락 충돌. 지수 백오프 + 지터로 제한된 횟수만 재시도하고, 재시도는 멱등한 작업에만 적용하거나 idempotency key/upsert로 멱등성을 확보한다. 재시도 소진 후에는 잡 실패로 승격시킨다. 구현 규칙: (a) `except Exception:`으로 뭉뚱그리지 말고 잡을 수 있는 구체 예외만 잡는다. bare `except:`는 KeyboardInterrupt/SystemExit까지 삼켜 잡이 중단되지 않게 만든다. (b) 도메인 예외 계층(`PipelineError` 밑에 `TransientError`, `DataQualityError`, `ConfigError`)을 정의하면 재시도·스킵·중단 정책을 예외 타입으로 선언적으로 결정할 수 있다. (c) 로깅은 `logger.exception()`으로 스택트레이스를 남기되, 레코드 원문 전체를 로그에 쏟아 붓지 말고(대량 발생 시 로그가 터지고 PII 유출 위험) 샘플링해 남긴다. (d) 예외를 다시 던질 때 `raise ... from e`로 원인 체인을 보존하고, 컨텍스트(파일명, 오프셋, 배치 ID)를 메시지에 포함해 사후 추적이 가능하게 한다. (e) `try` 블록은 실패 가능 구간만 좁게 감싸고, 리소스 정리는 `finally`/컨텍스트 매니저에 맡긴다. (f) 중간 산출물은 임시 경로에 쓴 뒤 원자적으로 커밋(rename/파티션 스왑)해, 실패 시 부분 데이터가 노출되지 않게 한다. (g) 마지막으로 처리 건수·스킵 건수·재시도 횟수를 메트릭으로 내보내 이상 징후를 모니터링에서 감지한다.",
+    "keywords": [
+      "레코드 단위 vs 잡 단위 분류",
+      "데드레터 + 실패율 임계",
+      "일시적 오류 지수 백오프/멱등성",
+      "도메인 예외 계층",
+      "raise from / 원자적 커밋"
+    ],
+    "explanation": "'try-except로 감싼다'가 아니라 오류를 분류하고 각 부류에 다른 정책을 매핑하는 설계를 말하는지가 핵심이다. 특히 조용한 스킵의 위험과 실패율 임계 중단을 언급하면 운영 경험 신호가 된다."
+  },
+  {
+    "id": "python-sub-011",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "파이썬으로 작성한 데이터 파이프라인의 테스트 전략을 설계하라. 무엇을 어느 수준에서 테스트하고, 클러스터·외부 시스템 의존성은 어떻게 다루는가?",
+    "model_answer": "핵심 전제는 '변환 로직'과 'I/O·오케스트레이션'을 코드 구조에서 분리하는 것이다. 읽기/쓰기를 얇은 어댑터로 밀어내고 순수 변환 함수(DataFrame in → DataFrame out)를 남기면, 테스트 대부분이 클러스터 없이 빠르게 돌아간다. 계층별 전략: (1) 단위 테스트 — 파싱, 정규화, 비즈니스 규칙 계산 같은 순수 함수를 작은 인라인 픽스처로 검증한다. 경계값(널, 빈 문자열, 음수, 타임존 경계, 중복 키, 인코딩 깨짐)을 명시적으로 넣는 것이 실제 버그를 잡는 지점이다. pytest의 `parametrize`로 케이스를 표로 관리하고, `hypothesis`로 속성 기반 테스트를 더하면 예상 못한 입력을 발굴할 수 있다. (2) 변환 로직 테스트(PySpark) — 세션 스코프 `SparkSession`을 로컬 모드(`local[2]`)로 픽스처화해 재사용하고, 수십 행짜리 소형 DataFrame으로 조인·윈도우·집계 결과를 검증한다. 비교는 행 순서에 의존하지 않도록 정렬 후 비교하거나 `chispa` 같은 헬퍼를 쓰고, 스키마(컬럼명·타입·nullable)까지 함께 단언해 스키마 회귀를 잡는다. 세션 생성 비용이 크므로 테스트당 생성은 피하고, 셔플 파티션을 줄여(`spark.sql.shuffle.partitions=2`) 실행 시간을 낮춘다. (3) 통합 테스트 — 외부 시스템은 모킹보다 실제와 가까운 대역을 쓰는 편이 낫다. testcontainers로 Postgres/Kafka/MinIO를 띄우거나, 로컬 파일시스템 + Parquet/Iceberg로 저장소 계약을 검증한다. 모킹이 과하면 '테스트는 통과하는데 운영에서 깨지는' 상태가 되므로, 최소한 스키마와 직렬화 계약은 실제 구현으로 검증한다. (4) 데이터 품질 테스트 — 코드 테스트와 별개로 파이프라인 실행 중 데이터에 대한 단언(널 비율, 유니크 키, 행 수 급변, 값 도메인, 참조 무결성)을 두고 Great Expectations/soda/dbt test 또는 직접 구현한 체크로 검사한다. 스키마 계약은 pydantic이나 Avro/Iceberg 스키마로 명시해 소스 변경을 조기에 감지한다. (5) 회귀 테스트 — 대표 입력 샘플과 기대 출력을 골든 파일로 고정해 리팩터링 시 결과 동일성을 확인한다. 다만 골든 파일이 커지면 유지가 어려우므로 요약 통계(집계값, 해시)로 축약하는 절충을 쓴다. (6) 오케스트레이션 — Airflow라면 DAG 임포트 오류·순환 의존·태스크 ID 중복을 검사하는 정적 테스트를 넣고, 태스크 본문 로직은 DAG에서 분리한 함수로 옮겨 단위 테스트한다. 운영 규칙: 테스트는 결정적이어야 하므로 `datetime.now()`·랜덤·현재 파티션 경로를 코드에 직접 박지 말고 주입 가능한 인자(clock, 실행 날짜)로 만든다. CI에서는 클러스터가 필요 없는 단위·로컬 Spark 테스트를 매 커밋에, 컨테이너 기반 통합 테스트는 병합 전에, 실데이터 스모크 테스트는 스테이징에서 주기적으로 돌리는 식으로 비용에 따라 단계를 나눈다. 마지막으로 프로덕션 데이터 전량을 테스트에 쓰지 말고, 대표성 있는 샘플을 고정 픽스처로 관리하되 PII는 반드시 마스킹한다.",
+    "keywords": [
+      "I/O와 순수 변환 분리",
+      "로컬 SparkSession 픽스처/스키마 단언",
+      "testcontainers 통합 테스트",
+      "데이터 품질 단언(Great Expectations)",
+      "시간·랜덤 주입으로 결정성 확보"
+    ],
+    "explanation": "데이터 파이프라인 테스트는 '코드가 맞는가'와 '데이터가 맞는가' 두 축이 모두 필요하다. 두 축을 구분하고, 클러스터 의존성을 구조 분리로 줄이는 접근을 말하는지가 변별점이다."
+  },
+  {
+    "id": "python-sub-012",
+    "category": "python",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "파이썬의 list, tuple, set, dict 네 가지 기본 자료구조의 차이를 설명하고, ETL 코드에서 각각 어떤 상황에 쓰는 것이 적절한지 예를 들어 설명하라.",
+    "model_answer": "차이: (1) list — 순서가 있고 내용을 바꿀 수 있는(가변) 시퀀스다. 인덱스 접근은 O(1)이지만 `x in list`는 앞에서부터 훑는 선형 탐색이라 O(n)이다. (2) tuple — 순서가 있으나 생성 후 바꿀 수 없는(불변) 시퀀스다. 불변이라 해시가 가능해 dict의 키나 set의 원소로 쓸 수 있고, 크기가 고정이라 list보다 약간 가볍다. (3) set — 순서를 보장하지 않고 중복을 허용하지 않는 해시 기반 모음이다. 멤버십 검사와 중복 제거가 평균 O(1)이다. (4) dict — 키-값 매핑을 해시 기반으로 저장한다. 키로 하는 조회·삽입·삭제가 평균 O(1)이며, Python 3.7부터는 삽입 순서 보장이 언어 명세에 포함되었다. 핵심 갈림길은 '순서가 필요한가', '변경이 필요한가', '무엇으로 찾을 것인가(위치 vs 키)' 세 가지다. ETL에서의 선택: (a) list — 읽어들인 레코드를 순서대로 모아 배치 단위로 싱크에 넘길 때, 청크별 부분 집계 결과를 순차 누적할 때. 단 전체 데이터를 list에 모으면 메모리를 그대로 먹으므로 배치 크기를 제한해야 한다. (b) tuple — 컬럼 스키마처럼 바뀌지 않아야 하는 값, 함수의 다중 반환값, 그리고 `(날짜, 지역)`처럼 복합 키를 dict 키나 set 원소로 쓸 때. 불변이라 실수로 하류에서 수정되는 사고를 막는다. (c) set — 이미 처리한 ID를 담아 중복 제거하거나, 소스 컬럼 집합과 기대 스키마의 차집합으로 누락 컬럼을 찾을 때(`expected - actual`). 합집합·교집합·차집합 연산이 그대로 쓰인다. (d) dict — 코드값 → 라벨 같은 참조 데이터를 올려두고 룩업 조인할 때, 그리고 그룹별 누적 합계를 담을 때(`collections.defaultdict(int)`). 흔한 실수와 판단 기준: 50만 건 참조 데이터를 list에 담고 `if key in ref_list`로 조회하면 건당 선형 탐색이 되어 전체가 O(n*m)으로 폭발한다. 조회가 목적이면 반드시 dict나 set으로 바꿔 해시 조회를 쓴다. 반대로 원소가 수십 개뿐이면 해시 테이블 오버헤드 때문에 list가 오히려 가볍고 빠를 수 있다. 또한 dict/set은 원소당 해시 테이블 슬롯을 유지하므로 같은 건수라면 list보다 메모리를 더 쓴다는 점, 그리고 dict의 키로 쓰려면 값이 불변(해시 가능)이어야 해서 list는 키가 될 수 없고 tuple은 될 수 있다는 점을 함께 기억해야 한다.",
+    "keywords": [
+      "가변 vs 불변",
+      "해시 조회",
+      "중복 제거",
+      "키-값 매핑",
+      "삽입 순서 보장"
+    ],
+    "explanation": "네 자료구조의 정의를 나열하는 데 그치지 않고, '조회를 list로 하면 O(n*m)이 된다' 같은 실제 ETL 성능 사고와 연결하는지를 본다. tuple이 해시 가능해 복합 키로 쓰인다는 점, 소량 데이터에서는 list가 더 나을 수 있다는 균형 감각까지 말하면 좋은 답변이다."
+  }
+]

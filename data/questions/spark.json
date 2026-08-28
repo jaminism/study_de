@@ -1,0 +1,478 @@
+[
+  {
+    "id": "spark-mcq-001",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "다음 Spark 코드에서 실제 연산이 클러스터에서 실행되는 시점은 언제인가?\n\ndf2 = df.filter(\"amount > 100\")\ndf3 = df2.select(\"user_id\", \"amount\")\ndf3.count()",
+    "choices": [
+      "filter()가 호출되는 순간 실행된다",
+      "select()가 호출되는 순간 실행된다",
+      "count()가 호출되는 순간 filter와 select까지 함께 실행된다",
+      "SparkSession이 생성되는 시점에 미리 실행 계획이 모두 수행된다"
+    ],
+    "answer_index": 2,
+    "explanation": "Spark는 lazy evaluation을 사용한다. filter/select 같은 트랜스포메이션은 논리 계획만 누적하고, count() 같은 액션이 호출될 때 Catalyst가 계획을 최적화한 뒤 잡을 제출한다. 이 때문에 트랜스포메이션 라인에서는 에러가 나지 않다가 액션에서 스택 트레이스가 터지는 일이 흔하며, 디버깅 시 이 지점을 혼동하기 쉽다."
+  },
+  {
+    "id": "spark-mcq-002",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "다음 연산 중 셔플(shuffle)을 유발하는 wide transformation만으로 묶인 것은?",
+    "choices": [
+      "groupByKey, join, distinct",
+      "map, filter, union",
+      "select, withColumn, drop",
+      "mapPartitions, flatMap, sample"
+    ],
+    "answer_index": 0,
+    "explanation": "groupByKey, join, distinct는 키를 기준으로 데이터를 재분배해야 하므로 자식 파티션이 모든 부모 파티션에 의존하는 wide dependency이며 셔플이 발생한다. map/filter/union/select/withColumn/mapPartitions는 파티션 단위로 독립 처리가 가능한 narrow transformation이다. union은 파티션을 이어 붙이기만 하므로 셔플이 없다는 점이 함정이다."
+  },
+  {
+    "id": "spark-mcq-003",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "DataFrame에 대해 인자 없이 cache()를 호출했을 때 적용되는 저장 레벨은?",
+    "choices": [
+      "MEMORY_ONLY",
+      "OFF_HEAP",
+      "DISK_ONLY",
+      "MEMORY_AND_DISK"
+    ],
+    "answer_index": 3,
+    "explanation": "RDD의 cache()는 MEMORY_ONLY지만, DataFrame/Dataset의 cache()는 MEMORY_AND_DISK가 기본값이다(Spark 3.x 기준). 즉 메모리에 다 담기지 못한 파티션은 버려지지 않고 디스크로 내려가며, 이 차이 때문에 'RDD는 캐시가 날아가는데 DataFrame은 안 날아간다'는 현상이 관찰된다."
+  },
+  {
+    "id": "spark-mcq-004",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "파티션이 200개인 DataFrame을 파일 10개로 저장하려 한다. repartition(10)과 coalesce(10)의 차이로 옳은 것은?",
+    "choices": [
+      "coalesce(10)은 전체 셔플을 일으키고 repartition(10)은 셔플이 없다",
+      "repartition(10)은 전체 셔플로 균등한 파티션을 만들고, coalesce(10)은 셔플 없이 기존 파티션을 병합해 크기가 불균등할 수 있다",
+      "둘 다 동일하며 coalesce는 repartition의 별칭이다",
+      "coalesce는 파티션 수를 늘릴 때만 사용할 수 있다"
+    ],
+    "answer_index": 1,
+    "explanation": "repartition은 wide transformation으로 해시 재분배를 수행해 파티션 크기가 고르지만 셔플 비용이 든다. coalesce는 narrow transformation으로 인접 파티션을 합치기만 해 저렴하지만 데이터가 한쪽에 쏠릴 수 있다. 또한 coalesce(n)로 파티션 수를 늘리는 것은 shuffle=true를 주지 않으면 무시된다. 주의할 점은 coalesce가 상위 스테이지의 병렬도까지 함께 낮춘다는 것이다."
+  },
+  {
+    "id": "spark-mcq-005",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "수억 건 규모의 DataFrame에 대해 df.collect()를 호출했을 때 가장 먼저 발생할 가능성이 높은 문제는?",
+    "choices": [
+      "익스큐터가 순차적으로 재시작된다",
+      "셔플 파티션 수가 자동으로 증가한다",
+      "드라이버 JVM으로 전체 결과가 모여 드라이버 OOM이 발생한다",
+      "HDFS 네임노드의 메모리가 고갈된다"
+    ],
+    "answer_index": 2,
+    "explanation": "collect()는 모든 익스큐터의 결과를 드라이버 프로세스 힙으로 모은다. 결과가 spark.driver.maxResultSize를 넘으면 잡이 실패하고, 넘지 않더라도 드라이버 OOM으로 이어진다. 확인 목적이라면 take(n)/show(n), 저장 목적이라면 write로 분산 저장하는 것이 정석이다."
+  },
+  {
+    "id": "spark-mcq-006",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "총 2GB 규모의 데이터를 집계하는데 스테이지마다 태스크가 200개씩 생성되고 각 태스크가 수십 ms 만에 끝난다. 가장 적절한 조치는?",
+    "choices": [
+      "spark.sql.shuffle.partitions 기본값 200이 데이터 규모에 비해 과도하므로 값을 낮추거나 AQE의 파티션 병합을 활성화한다",
+      "익스큐터 코어 수를 200개 이상으로 늘린다",
+      "spark.sql.shuffle.partitions를 2000으로 올린다",
+      "모든 조인을 sort-merge join으로 강제한다"
+    ],
+    "answer_index": 0,
+    "explanation": "spark.sql.shuffle.partitions의 기본값은 200이며 데이터 크기와 무관하게 고정이다. 소규모 데이터에서는 태스크당 처리량이 너무 작아 스케줄링 오버헤드가 실제 연산을 압도한다. Spark 3.x에서는 AQE(spark.sql.adaptive.enabled + coalescePartitions)가 셔플 후 통계를 보고 작은 파티션을 자동 병합해 이 문제를 해결한다. 파티션 수를 더 늘리는 것은 문제를 악화시킨다."
+  },
+  {
+    "id": "spark-mcq-007",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "큰 팩트 테이블과 작은 차원 테이블을 조인할 때 broadcast join이 자동 선택되지 않았다. 원인으로 가장 가능성이 낮은 것은?",
+    "choices": [
+      "작은 테이블의 추정 크기가 spark.sql.autoBroadcastJoinThreshold(기본 10MB)를 초과했다",
+      "통계가 수집되지 않아 옵티마이저가 테이블 크기를 과대 추정했다",
+      "조인 조건이 등가(equi-join)가 아니라 부등호 비교였다",
+      "익스큐터의 코어 수가 조인 키의 카디널리티보다 적었다"
+    ],
+    "answer_index": 3,
+    "explanation": "브로드캐스트 조인 선택은 추정 크기, 통계 정확도, 조인 타입(등가 여부)과 조인 종류(예: full outer는 브로드캐스트 불가)에 좌우된다. 익스큐터 코어 수와 조인 키 카디널리티의 관계는 조인 전략 선택 기준이 아니다. 통계가 없으면 ANALYZE TABLE로 수집하거나 broadcast() 힌트로 강제할 수 있으나, 힌트 남용은 드라이버 OOM을 유발할 수 있다."
+  },
+  {
+    "id": "spark-mcq-008",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Spark UI에서 한 스테이지의 태스크 199개는 10초 내에 끝났는데 1개만 40분째 실행 중이다. 가장 유력한 원인은?",
+    "choices": [
+      "드라이버와 익스큐터 간 네트워크 단절",
+      "특정 조인/그룹 키에 레코드가 집중된 데이터 스큐",
+      "spark.sql.shuffle.partitions가 너무 작게 설정됨",
+      "Catalyst 옵티마이저가 논리 계획 최적화에 실패함"
+    ],
+    "answer_index": 1,
+    "explanation": "동일 스테이지 내 태스크 간 실행 시간과 입력 레코드 수의 편차가 극단적인 것은 데이터 스큐의 전형적 징후다. Spark UI의 Summary Metrics에서 Max와 Median의 Shuffle Read Size를 비교하면 확인된다. 대응은 AQE skew join 최적화 활성화, 핫 키 salting, 가능하면 브로드캐스트 조인 전환이다. 단순히 파티션 수를 늘려도 같은 키는 여전히 한 파티션으로 가므로 해결되지 않는다."
+  },
+  {
+    "id": "spark-mcq-009",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Spark 3.x의 AQE(Adaptive Query Execution)가 런타임 통계를 이용해 수행하는 최적화가 아닌 것은?",
+    "choices": [
+      "셔플 후 작은 파티션들을 병합(coalesce)",
+      "sort-merge join을 broadcast hash join으로 전환",
+      "Parquet 파일의 컬럼 프루닝과 술어 푸시다운",
+      "스큐 파티션을 분할해 조인 태스크를 균등화"
+    ],
+    "answer_index": 2,
+    "explanation": "컬럼 프루닝과 술어 푸시다운은 AQE 이전, Catalyst의 정적 논리 계획 최적화 단계에서 수행된다. AQE의 3대 기능은 (1) post-shuffle 파티션 병합, (2) 조인 전략 재선택(SMJ→BHJ), (3) skew join 최적화다. 셔플이 없는 쿼리에는 AQE가 개입할 여지가 거의 없다는 점도 함께 기억해야 한다."
+  },
+  {
+    "id": "spark-mcq-010",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "df.groupByKey() 대신 reduceByKey()를 권장하는 핵심 이유는?",
+    "choices": [
+      "reduceByKey는 맵 사이드에서 부분 집계를 수행해 셔플로 전송되는 데이터양을 줄이기 때문",
+      "reduceByKey는 셔플을 전혀 일으키지 않기 때문",
+      "groupByKey는 정렬을 강제해 결과 순서가 달라지기 때문",
+      "reduceByKey는 파티션 수를 자동으로 최적화하기 때문"
+    ],
+    "answer_index": 0,
+    "explanation": "reduceByKey는 셔플 전에 각 파티션에서 로컬 병합(맵 사이드 컴바인)을 수행하므로 네트워크로 나가는 레코드 수가 크게 줄어든다. groupByKey는 같은 키의 모든 값을 그대로 전송한 뒤 한 익스큐터에 모으므로 셔플량이 크고 핫 키에서 OOM 위험이 있다. 둘 다 셔플 자체는 발생한다."
+  },
+  {
+    "id": "spark-mcq-011",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "반복 연산이 많은 잡에서 cache()와 checkpoint()의 차이로 옳은 것은?",
+    "choices": [
+      "cache는 계보(lineage)를 절단하고 checkpoint는 유지한다",
+      "cache는 액션 없이도 즉시 물리화되지만 checkpoint는 지연 실행된다",
+      "둘 다 계보를 절단하지만 checkpoint는 메모리에만 저장한다",
+      "checkpoint는 신뢰 가능한 저장소에 기록하고 계보를 절단하지만, cache는 계보를 유지하며 유실 시 재계산한다"
+    ],
+    "answer_index": 3,
+    "explanation": "cache/persist는 파티션을 메모리/디스크에 임시 보관하되 계보를 남겨 두어, 익스큐터가 죽으면 계보를 따라 재계산한다. checkpoint는 HDFS 등 신뢰 저장소에 쓰고 계보를 잘라내므로 반복 횟수가 많아 DAG가 길어질 때 스택 오버플로/재계산 폭발을 막는다. 둘 다 액션이 있어야 실제로 물리화되며, checkpoint 전에 cache를 걸어 두 번 계산되는 것을 막는 것이 관용적 패턴이다."
+  },
+  {
+    "id": "spark-mcq-012",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Catalyst 옵티마이저가 아래 쿼리를 최적화할 때 수행하는 대표적 변환은?\n\nSELECT a.id FROM big a JOIN dim b ON a.did = b.id WHERE a.dt = '2026-08-01'",
+    "choices": [
+      "조인 순서를 무작위로 섞어 실행 시간을 분산",
+      "조인 이후에 적용되도록 작성된 필터를 스캔 단계로 밀어 내려 파티션 프루닝과 술어 푸시다운을 수행",
+      "SELECT 절의 컬럼을 모두 읽도록 확장해 캐시 적중률을 높임",
+      "WHERE 절을 UDF로 변환해 익스큐터에서 병렬 평가"
+    ],
+    "answer_index": 1,
+    "explanation": "Catalyst는 술어 푸시다운(predicate pushdown), 컬럼 프루닝, 상수 폴딩 등의 규칙 기반 변환을 적용한다. dt가 파티션 컬럼이면 파티션 프루닝으로 스캔 대상 디렉터리 자체가 줄고, Parquet/ORC라면 파일 푸터의 통계로 row group까지 스킵된다. 다만 UDF 안에 조건을 감싸면 Catalyst가 내부를 볼 수 없어 푸시다운이 막힌다는 점이 실무 함정이다."
+  },
+  {
+    "id": "spark-mcq-013",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "AQE의 skew join 최적화를 켰는데도 특정 조인에서 스큐가 해소되지 않았다. 원인으로 가장 타당한 것은?",
+    "choices": [
+      "skew join 최적화는 파티션 수가 200 미만일 때만 동작한다",
+      "AQE는 조인에는 적용되지 않고 집계에만 적용된다",
+      "AQE skew join 최적화는 셔플된 sort-merge join(및 shuffle hash join)에만 적용되며, 브로드캐스트로 계획되었거나 셔플 통계가 없는 경우에는 개입하지 않는다",
+      "AQE는 Parquet 입력에만 동작하고 ORC에는 동작하지 않는다"
+    ],
+    "answer_index": 2,
+    "explanation": "AQE의 skew join은 셔플 맵 스테이지의 통계를 보고 skewedPartitionFactor와 skewedPartitionThresholdInBytes 기준을 넘는 파티션을 분할한 뒤 반대편 파티션을 복제해 처리한다. 따라서 셔플 조인이 아니면 적용되지 않고, 한 키가 통째로 거대한 경우에는 분할해도 같은 키가 쪼개지지 않아 효과가 제한적이다. 이 경우 salting(키에 난수 접미사 부여 후 반대편을 N배 복제)으로 물리적으로 키를 분산해야 한다."
+  },
+  {
+    "id": "spark-mcq-014",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "Spark UI 스테이지 상세에서 Shuffle Spill (Memory) 20GB, Shuffle Spill (Disk) 4GB로 표시되었다. 이 지표의 올바른 해석은?",
+    "choices": [
+      "디스크로 4GB가 유출되었고, 그 4GB가 메모리에서는 역직렬화 상태로 20GB를 차지하던 데이터임을 의미한다",
+      "셔플 데이터가 총 24GB이며 그중 20GB는 정상적으로 메모리에서 처리되었다",
+      "디스크 쓰기 20GB, 메모리 쓰기 4GB가 각각 발생했다",
+      "익스큐터 힙에 20GB의 여유가 있었다는 뜻으로 튜닝이 불필요하다"
+    ],
+    "answer_index": 0,
+    "explanation": "Spill (Memory)는 스필된 데이터가 메모리에 있을 때의 역직렬화 크기, Spill (Disk)는 직렬화·압축되어 실제 디스크에 기록된 크기다. 두 값은 같은 데이터를 서로 다른 형태로 잰 것이며 더해서는 안 된다. 스필이 크다면 태스크당 처리량이 실행 메모리를 초과한 것이므로, 셔플 파티션 수를 늘려 태스크당 데이터를 줄이거나 익스큐터 메모리/spark.memory.fraction을 조정하고, 스큐가 원인이면 스큐부터 해결해야 한다."
+  },
+  {
+    "id": "spark-mcq-015",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "실행 계획(explain)에서 연산자 앞의 별표(*)가 사라지고 성능이 크게 떨어졌다. 이것이 시사하는 바는?",
+    "choices": [
+      "AQE가 비활성화되어 셔플 파티션 병합이 일어나지 않았다",
+      "입력 파일이 압축되지 않아 스캔 비용이 증가했다",
+      "해당 스테이지가 드라이버에서 실행되고 있다",
+      "Tungsten의 whole-stage code generation이 적용되지 않아 연산자마다 가상 함수 호출과 행 단위 객체 처리가 발생한다"
+    ],
+    "answer_index": 3,
+    "explanation": "explain 출력의 * 표시는 whole-stage codegen이 적용된 연산자를 의미한다. 여러 연산자를 하나의 자바 함수로 합쳐 가상 함수 호출과 중간 객체 생성을 제거하는데, 지원하지 않는 연산자(일부 Python UDF, 매우 큰 계획, 특정 소스 연산자)가 끼면 코드젠이 끊긴다. 이 경우 Python UDF를 pandas UDF나 내장 함수로 대체하는 것이 효과적인 대응이다."
+  },
+  {
+    "id": "spark-sub-001",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "RDD, DataFrame, Dataset의 차이를 설명하고, 실무에서 DataFrame API를 우선 선택하는 이유를 서술하라.",
+    "model_answer": "RDD는 타입 안전한 저수준 분산 컬렉션으로 스키마 정보가 없어 Catalyst 최적화를 받지 못하며, 개발자가 직접 실행 방식을 제어한다. DataFrame은 Row의 집합에 스키마가 붙은 구조로, Catalyst 옵티마이저가 술어 푸시다운·컬럼 프루닝·조인 전략 선택 등을 자동 수행하고 Tungsten의 off-heap 이진 포맷과 whole-stage codegen 혜택을 받는다. Dataset은 DataFrame에 컴파일 타임 타입 안전성을 더한 JVM(Scala/Java) 전용 API로, 람다를 쓰면 Catalyst가 내부를 분석하지 못해 최적화가 일부 제한되고 인코딩/디코딩 비용이 생긴다. 실무에서는 최적화 혜택과 언어 중립성(Python 포함) 때문에 DataFrame/Spark SQL을 기본으로 쓰고, 비정형 데이터 처리나 세밀한 파티션 제어가 필요할 때만 RDD로 내려간다.",
+    "keywords": [
+      "Catalyst",
+      "Tungsten",
+      "스키마",
+      "타입 안전성",
+      "컬럼 프루닝"
+    ],
+    "explanation": "세 API의 차이를 '최적화 가능 여부'라는 축으로 설명할 수 있는지가 핵심이다. RDD는 Spark에게 불투명한 블랙박스이고, DataFrame은 선언적이라 최적화가 가능하다는 점을 짚어야 한다."
+  },
+  {
+    "id": "spark-sub-002",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "Spark가 하나의 잡을 Job → Stage → Task로 나누는 기준을 설명하고, 스테이지 경계가 생기는 지점을 예로 들어라.",
+    "model_answer": "액션(count, collect, write 등) 하나가 Job 하나를 만든다. Spark는 해당 액션까지의 RDD/DataFrame 계보를 DAG로 만들고, 셔플이 필요한 wide dependency 지점에서 Stage를 자른다. 즉 map/filter처럼 파티션 대 파티션이 1:1인 narrow transformation은 같은 스테이지로 파이프라이닝되고, groupBy/join/repartition/distinct처럼 키 재분배가 필요한 지점에서 스테이지가 분리된다. 각 스테이지 안에서는 파티션당 태스크 하나(파티션 1개 → Task 1개)가 생성되어 익스큐터 코어에서 병렬 실행된다. 예를 들어 read → filter → groupBy → count는 셔플을 기준으로 두 스테이지가 되며, 앞 스테이지는 shuffle write, 뒤 스테이지는 shuffle read로 이어진다. 이 지점이 바로 셔플 경계이다. 즉 액션 트리거가 Job의 시작점이다.",
+    "keywords": [
+      "액션 트리거",
+      "wide dependency",
+      "셔플 경계",
+      "파티션당 태스크",
+      "DAG"
+    ],
+    "explanation": "스테이지 분할의 유일한 기준이 셔플 경계라는 점, 태스크 수가 파티션 수와 같다는 점이 핵심이다. Spark UI를 읽고 병목 스테이지를 찾는 능력의 기반이 된다."
+  },
+  {
+    "id": "spark-sub-003",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "특정 파티션만 유독 오래 걸리는 데이터 스큐 현상의 원인을 진단하는 절차와, salting을 이용한 해결 방법을 구체적으로 설명하라.",
+    "model_answer": "진단은 Spark UI 스테이지의 Summary Metrics에서 Shuffle Read Size/Records의 Median과 Max를 비교하는 것으로 시작한다. Max가 Median의 수십 배면 스큐다. 이어서 조인/그룹 키에 대해 groupBy(key).count().orderBy(desc)로 상위 키 분포를 확인해 핫 키를 특정하고, NULL이나 기본값('unknown', 0 등)이 몰려 있는지 본다. 대응은 (1) 작은 쪽이 브로드캐스트 가능하면 브로드캐스트 조인으로 셔플 자체를 제거, (2) Spark 3.x라면 AQE skew join 최적화 활성화, (3) 그래도 남으면 salting을 적용한다. salting은 큰 쪽 테이블의 키에 0~N-1 난수를 붙여 composite key를 만들고, 작은 쪽 테이블의 해당 행을 0~N-1로 N배 복제(explode)한 뒤 composite key로 조인한 다음 salt 컬럼을 제거하는 방식이다. 핫 키에만 선택적으로 salting을 적용하면 복제 비용을 줄일 수 있다. NULL 키가 원인이면 조인 전에 필터링하거나 별도 처리한다. 이것이 핫 키 스큐다.",
+    "keywords": [
+      "Summary Metrics",
+      "핫키 스큐",
+      "salting",
+      "AQE skew join",
+      "브로드캐스트 조인"
+    ],
+    "explanation": "스큐는 Spark 면접의 단골 주제다. '진단 → 원인 분류 → 비용이 낮은 대응부터 적용'이라는 순서를 제시하고, salting의 양쪽 처리(한쪽은 난수 부여, 반대쪽은 복제)를 정확히 설명하는지가 변별점이다."
+  },
+  {
+    "id": "spark-sub-004",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "spark.sql.shuffle.partitions 값을 결정하는 기준을 설명하고, 값이 너무 크거나 작을 때 각각 어떤 증상이 나타나는지 서술하라.",
+    "model_answer": "기본값은 데이터 크기와 무관하게 200이다. 일반적 기준은 셔플 단계에서 태스크 하나가 처리할 데이터가 대략 100~200MB가 되도록 잡는 것이며, 동시에 총 태스크 수가 클러스터의 총 코어 수의 2~3배 정도가 되어 웨이브가 고르게 돌도록 맞춘다. 값이 너무 작으면 태스크당 데이터가 커져 셔플 스필과 익스큐터 OOM이 발생하고 병렬도가 부족해 코어가 논다. 값이 너무 크면 태스크가 수 ms 만에 끝나 스케줄링 오버헤드가 지배하고, 출력 시에는 작은 파일이 대량 생성되어(small file problem) 다운스트림과 메타스토어/네임노드에 부담을 준다. Spark 3.x에서는 AQE의 coalescePartitions를 켜고 initialPartitionNum을 넉넉히 준 뒤 advisoryPartitionSizeInBytes로 목표 파티션 크기를 지정하면, 런타임 통계로 자동 병합되므로 수동 튜닝 부담이 크게 줄어든다. 즉 디스크 스필이 늘어난다.",
+    "keywords": [
+      "기본값 200",
+      "태스크당 100~200MB",
+      "디스크 스필",
+      "small file",
+      "AQE coalescePartitions"
+    ],
+    "explanation": "숫자를 외우는 문제가 아니라 '태스크당 데이터 크기'와 '코어 대비 태스크 수'라는 두 축으로 판단하는지를 본다. AQE로 넘어간 최신 실무 관행까지 언급하면 좋다."
+  },
+  {
+    "id": "spark-sub-005",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "익스큐터에서 OutOfMemoryError가 반복 발생할 때, 원인을 좁혀 가는 진단 절차와 각 원인별 대응책을 설명하라.",
+    "model_answer": "먼저 실패한 스테이지를 특정하고 그 스테이지의 태스크 메트릭을 본다. (1) 특정 태스크만 입력 레코드가 압도적으로 많다면 데이터 스큐가 원인이므로 salting/AQE skew join으로 대응한다. (2) 태스크가 고르게 크다면 태스크당 데이터가 과도한 것이므로 셔플 파티션 수를 늘려 태스크당 처리량을 줄인다. (3) Storage Memory가 과도하게 점유되어 있으면 불필요한 캐시가 실행 메모리를 잠식한 것이므로 unpersist하거나 저장 레벨을 MEMORY_AND_DISK_SER로 바꾼다. (4) collect/toPandas나 거대한 브로드캐스트가 있으면 드라이버 쪽 OOM이므로 해당 패턴을 제거한다. (5) groupByKey나 한 키에 대한 collect_list처럼 단일 키의 모든 값을 한 태스크 메모리에 올리는 연산이 있으면 reduceByKey/집계 함수로 대체한다. 그 다음이 자원 조정이며, executor 메모리를 무작정 올리기보다 코어 수를 줄여 태스크당 가용 메모리를 늘리는 편이 효과적일 때가 많다. 오프힙(spark.memory.offHeap)과 memoryOverhead 부족(특히 PySpark/네이티브 라이브러리 사용 시)도 함께 점검한다. 이후 코어 수 축소로 대응한다.",
+    "keywords": [
+      "데이터 스큐",
+      "셔플 파티션",
+      "Storage Memory",
+      "memoryOverhead",
+      "코어 수 축소"
+    ],
+    "explanation": "'메모리를 늘린다'는 답만 하면 감점이다. 원인 분류 트리를 갖고 있는지, 그리고 익스큐터 코어 수와 태스크당 메모리의 반비례 관계를 아는지가 실력 차이를 만든다."
+  },
+  {
+    "id": "spark-sub-006",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "broadcast() 힌트를 적용한 뒤 잡이 드라이버 OOM 또는 타임아웃으로 실패하기 시작했다. 브로드캐스트 조인의 내부 동작을 근거로 원인과 대응을 설명하라.",
+    "model_answer": "브로드캐스트 조인은 작은 쪽 테이블을 드라이버로 collect해 해시 릴레이션을 만든 뒤 모든 익스큐터에 배포하고, 각 익스큐터가 로컬 해시 조인을 수행해 셔플을 없앤다. 따라서 (1) 브로드캐스트 대상이 드라이버 힙에 통째로 올라가므로 압축된 Parquet 기준으로는 작아 보여도 역직렬화 후 크기가 몇 배로 불어나 드라이버 OOM이 발생할 수 있다. (2) 배포가 spark.sql.broadcastTimeout(기본 300초) 내에 끝나지 않으면 타임아웃으로 실패한다. (3) 익스큐터마다 릴레이션 사본을 들고 있어야 하므로 익스큐터 메모리도 함께 압박한다. 대응은 대상 테이블에 컬럼 프루닝 선행(조인 전에 필요한 컬럼만 select)과 조기 필터링을 적용해 실제 브로드캐스트 크기를 줄이는 것, 그래도 크면 힌트를 제거하고 sort-merge join으로 되돌리되 스큐는 AQE/salting으로 따로 처리하는 것이다. 드라이버 메모리와 broadcastTimeout 상향은 마지막 수단이며, autoBroadcastJoinThreshold를 무분별하게 올리는 것은 다른 쿼리까지 위험하게 만든다.",
+    "keywords": [
+      "드라이버 힙",
+      "역직렬화 크기",
+      "broadcastTimeout",
+      "컬럼 프루닝 선행",
+      "autoBroadcastJoinThreshold"
+    ],
+    "explanation": "브로드캐스트가 '드라이버 경유'라는 사실을 아는지가 핵심이다. 압축 크기와 인메모리 크기의 괴리, 그리고 힌트 남용의 위험까지 설명하면 실무 경험이 드러난다."
+  },
+  {
+    "id": "spark-sub-007",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Spark 배치 잡의 출력이 매 실행마다 수만 개의 작은 파일을 만들어 다운스트림 조회가 느려지고 있다. 원인과 해결 전략을 설명하라.",
+    "model_answer": "출력 파일 수는 대체로 '마지막 스테이지의 파티션 수 × 파티션 컬럼 조합 수'로 결정된다. 셔플 파티션 200개 상태에서 dt/hour 같은 파티션 컬럼으로 partitionBy를 하면 각 태스크가 자신이 가진 모든 파티션 값에 대해 파일을 하나씩 쓰기 때문에 파일 수가 곱셈으로 폭증한다. 해결은 (1) 쓰기 직전에 파티션 컬럼 기준으로 repartition(파티션컬럼)을 걸어 같은 파티션 값이 한 태스크에 모이게 하고, 데이터가 큰 파티션은 repartition(n, 파티션컬럼)으로 분할 수를 제어하는 것, (2) 전체 규모가 작으면 coalesce로 파일 수를 줄이되 상위 스테이지 병렬도 저하를 감수할지 판단하는 것, (3) Spark 3.x에서는 AQE coalescePartitions와 advisoryPartitionSizeInBytes로 목표 파일 크기를 맞추는 것이다. 이미 쌓인 파일은 주기적 compaction 배치(작은 파일을 읽어 큰 파일로 재기록)로 정리하며, 테이블 포맷이 Iceberg/Delta라면 제공되는 compaction 기능을 쓴다. 작은 파일은 HDFS 네임노드 메모리(블록당 메타데이터)와 쿼리 엔진의 파일 리스팅·태스크 생성 오버헤드 양쪽에 부담을 준다.",
+    "keywords": [
+      "partitionBy 곱셈 효과",
+      "repartition by partition column",
+      "compaction",
+      "advisoryPartitionSizeInBytes",
+      "네임노드 메모리"
+    ],
+    "explanation": "파일 수가 왜 곱셈으로 늘어나는지 메커니즘을 설명할 수 있어야 한다. coalesce가 병렬도를 함께 떨어뜨린다는 부작용까지 언급하면 좋은 답변이다."
+  },
+  {
+    "id": "spark-sub-008",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Catalyst의 정적 최적화만으로 해결되지 않는 문제를 AQE가 어떻게 보완하는지 설명하고, AQE로도 해결되지 않아 개발자 개입이 필요한 상황을 예로 들어라.",
+    "model_answer": "Catalyst는 쿼리 실행 전에 수집된 통계와 규칙으로 계획을 세운다. 그런데 통계가 없거나 낡았을 때, 필터/조인 후의 실제 크기가 추정과 크게 다를 때, 데이터 분포가 실행마다 달라질 때는 계획이 어긋난다. AQE는 각 셔플 스테이지가 끝난 뒤 실제 맵 출력 통계를 읽어 남은 계획을 다시 짠다. 구체적으로 (1) 실제 결과가 작으면 sort-merge join을 broadcast hash join으로 바꾸고(SMJ→BHJ 전환), (2) 셔플 후 작은 파티션들을 병합해 태스크 수를 줄이며, (3) 지나치게 큰 파티션은 분할해 스큐를 완화한다. 한계도 분명하다. 셔플이 없는 쿼리에는 개입할 여지가 없고, 단일 키가 통째로 거대한 스큐는 파티션을 쪼개도 같은 키가 나뉘지 않으므로 salting이나 데이터 모델 변경이 필요하다. 또한 부적절한 파티셔닝으로 입력 단계에서 이미 파일이 편중되었다면 AQE는 셔플 이후에만 작동하므로 도움이 되지 않으며, UDF 안에 숨은 필터처럼 옵티마이저가 볼 수 없는 로직도 여전히 개발자가 풀어야 한다. 사용자 지정 broadcast 힌트는 AQE의 재선택보다 우선하므로, 낡은 힌트가 남아 있으면 오히려 AQE의 판단을 막는다. 이는 런타임 통계를 활용한 계획 재작성이며, 이때 힌트 우선순위가 적용된다.",
+    "keywords": [
+      "런타임 통계",
+      "계획 재작성",
+      "SMJ→BHJ 전환",
+      "단일 키 스큐",
+      "힌트 우선순위"
+    ],
+    "explanation": "AQE를 '켜면 다 되는 옵션'으로 이해하는지, 아니면 '셔플 경계에서만 작동하는 런타임 재계획'으로 정확히 이해하는지를 가르는 문제다. 한계 사례를 구체적으로 드는 것이 핵심이다."
+  },
+  {
+    "id": "spark-mcq-016",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Spark에서 Java 기본 직렬화 대신 Kryo 직렬화를 권장하는 근거와 그 대가를 가장 정확히 설명한 것은?",
+    "choices": [
+      "Kryo는 셔플 자체를 제거해 네트워크 전송을 없앤다",
+      "Kryo는 객체마다 장황한 클래스 메타데이터를 기록하지 않아 직렬화 결과가 작고 빠르지만, 이점을 온전히 얻으려면 사용자 클래스를 미리 등록해야 하고 일부 클래스는 지원되지 않을 수 있다",
+      "Kryo는 DataFrame의 Tungsten 이진 포맷을 대체해 컬럼 프루닝을 가능하게 한다",
+      "Kryo는 직렬화 속도는 느리지만 압축률이 매우 높아 디스크 스필을 없앤다"
+    ],
+    "answer_index": 1,
+    "explanation": "Java 직렬화는 리플렉션 기반이며 객체마다 클래스 서술 정보를 함께 기록해 느리고 결과물이 크다. Kryo는 등록된 클래스에 짧은 정수 ID를 부여해 훨씬 조밀하게 인코딩한다. 대신 registerKryoClasses로 등록하지 않으면 전체 클래스명이 기록되어 이점이 줄고, spark.kryo.registrationRequired를 켜면 미등록 클래스에서 실패하므로 운영 부담이 생긴다. 실무에서 가장 중요한 함정은 적용 범위다. spark.serializer는 RDD 셔플/캐시/브로드캐스트처럼 JVM 객체를 직렬화하는 경로에만 영향을 주며, DataFrame/Dataset은 Tungsten 이진 포맷과 인코더를 쓰므로 이 설정을 바꿔도 체감 효과가 거의 없다. Spark 3.x 기준 spark.serializer 기본값은 JavaSerializer이지만, 단순 타입 RDD의 셔플에는 내부적으로 이미 Kryo가 사용된다."
+  },
+  {
+    "id": "spark-mcq-017",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "PySpark에서 동일한 변환 로직을 (A) 내장 SQL 함수, (B) 일반 Python UDF, (C) pandas UDF로 각각 구현했을 때 성능 차이가 나는 근본 원인은?",
+    "choices": [
+      "세 방식 모두 JVM 안에서 실행되며 차이는 코드 표현 방식뿐이다",
+      "Python UDF는 드라이버에서만 실행되어 병렬성이 없다",
+      "일반 Python UDF는 행 단위로 JVM과 파이썬 워커 사이를 직렬화하며 왕복하고 Catalyst가 내부를 최적화하지 못하는 반면, pandas UDF는 Arrow로 배치 단위 전송해 그 비용을 줄이고, 내장 함수는 아예 JVM 안에서 실행되어 왕복이 없다",
+      "pandas UDF는 데이터를 드라이버로 모아 처리하므로 항상 가장 빠르다"
+    ],
+    "answer_index": 2,
+    "explanation": "PySpark의 데이터는 기본적으로 JVM 익스큐터에 있다. 일반 Python UDF를 만나면 각 행을 피클로 직렬화해 별도 파이썬 워커 프로세스로 보내고 결과를 다시 역직렬화해 받아야 하므로 프로세스 간 왕복과 직렬화 비용이 지배적이 된다. 게다가 Catalyst는 UDF 내부를 블랙박스로 취급해 술어 푸시다운과 whole-stage codegen이 그 지점에서 끊긴다. pandas UDF(벡터화 UDF)는 Arrow 포맷으로 여러 행을 한 번에 전달해 왕복 횟수와 직렬화 비용을 크게 줄이지만, 여전히 파이썬 프로세스를 거치므로 내장 함수보다는 느리다. 따라서 우선순위는 내장 함수 → pandas UDF → 일반 Python UDF 순이며, 세 방식 모두 익스큐터에서 병렬 실행된다는 점은 동일하다."
+  },
+  {
+    "id": "spark-mcq-018",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Spark UI의 Tasks 테이블에서 Locality Level이 대부분 ANY로 표시되고 태스크 스케줄링에 지연이 관찰된다. 이에 대한 설명으로 옳은 것은?",
+    "choices": [
+      "Locality Level은 태스크가 처리할 데이터와 얼마나 가까운 곳에서 실행되는지를 나타내며, ANY는 데이터를 원격 노드에서 가져와야 함을 뜻한다. Spark는 각 단계마다 spark.locality.wait 동안 더 가까운 슬롯을 기다렸다가 없으면 단계를 낮춘다",
+      "ANY는 해당 태스크가 드라이버에서 실행되고 있음을 의미한다",
+      "Locality Level은 태스크의 스케줄링 우선순위를 뜻하며 ANY가 가장 높은 우선순위다",
+      "Locality Level은 셔플 파티션 수로 결정되며 파티션을 늘리면 PROCESS_LOCAL이 된다"
+    ],
+    "answer_index": 0,
+    "explanation": "로컬리티 단계는 PROCESS_LOCAL(같은 익스큐터 JVM에 캐시된 데이터) > NODE_LOCAL(같은 노드의 HDFS 블록이나 다른 익스큐터) > RACK_LOCAL > ANY 순이다. Spark 스케줄러는 더 좋은 단계의 슬롯이 빌 때까지 spark.locality.wait(기본 3초)만큼 기다린 뒤 단계를 낮춘다. 로컬리티가 나빠지는 대표 원인은 컴퓨트와 스토리지가 분리된 환경(오브젝트 스토리지, K8s), 캐시가 없는 첫 실행, 익스큐터 재기동이다. 이런 환경에서는 아무리 기다려도 더 가까운 슬롯이 생기지 않으므로 대기 자체가 순수한 지연이 되어, locality.wait을 낮추는 것이 오히려 전체 실행 시간을 줄인다. 반대로 캐시된 데이터를 반복 사용하는 잡에서는 대기가 이득이다."
+  },
+  {
+    "id": "spark-mcq-019",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "두 대형 테이블을 매일 동일한 키로 조인하는데 실행마다 양쪽 전체 셔플이 반복된다. AQE나 salting이 아니라 셔플 자체를 구조적으로 제거하기 위한 물리 설계로 가장 적절한 것은?",
+    "choices": [
+      "spark.sql.shuffle.partitions를 두 테이블의 행 수와 동일하게 설정한다",
+      "양쪽 테이블을 조인 키로 partitionBy 하여 키 값마다 디렉터리를 만든다",
+      "양쪽 테이블을 coalesce(1)로 저장해 파일 수를 최소화한다",
+      "양쪽 테이블을 같은 조인 키와 같은 버킷 수로 bucketBy 하여 저장해, 읽는 시점에 이미 키 기준으로 동일하게 분배되어 있게 만든다"
+    ],
+    "answer_index": 3,
+    "explanation": "버킷팅은 쓰기 시점에 조인 키 해시로 데이터를 고정 개수의 버킷에 미리 분배해 두는 기법이다. 두 테이블의 버킷 키와 버킷 수가 일치하면 조인 시 재분배가 이미 끝난 상태이므로 셔플 없이 버킷 대 버킷으로 sort-merge join을 수행할 수 있다. 조인 키로 partitionBy를 하는 것은 고카디널리티 키에서 디렉터리와 작은 파일이 폭증해 오히려 재앙이 된다. 다만 버킷팅에도 제약이 있다. 메타스토어에 등록된 테이블(saveAsTable)에서만 효과가 있고, 버킷 수를 바꾸려면 전체 재작성이 필요하며, 한쪽 버킷 수가 다르면 셔플이 되살아난다. 또 버킷 하나가 태스크 하나에 대응하므로 버킷 수가 조인 단계의 병렬도를 사실상 고정하고, 키 분포가 편중되면 버킷 스큐가 그대로 남는다."
+  },
+  {
+    "id": "spark-mcq-020",
+    "category": "spark",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "느린 태스크를 만회하려고 spark.speculation을 활성화했지만 데이터 스큐로 인한 지연은 전혀 개선되지 않았다. 이유로 가장 타당한 것은?",
+    "choices": [
+      "투기적 실행은 셔플이 포함된 스테이지에서는 비활성화되기 때문",
+      "투기적 실행은 느린 태스크의 사본을 다른 익스큐터에서 중복 실행해 먼저 끝난 쪽을 채택하는 기법이라, 느림의 원인이 노드 이상일 때만 효과가 있고 처리할 데이터 자체가 많은 스큐 태스크는 복제해도 똑같이 느리기 때문",
+      "투기적 실행은 스테이지의 태스크 수가 200개 이하일 때만 동작하기 때문",
+      "투기적 실행이 스큐 파티션을 자동 분할하는데 분할 임계값이 너무 높게 설정되어 있기 때문"
+    ],
+    "answer_index": 1,
+    "explanation": "투기적 실행은 '같은 일을 하는데 유독 느린 태스크가 있다면 그 노드에 문제가 있을 것'이라는 가정 위에 서 있다. 디스크 열화, 네트워크 이상, 다른 프로세스와의 자원 경합 같은 환경적 스트래글러에는 효과적이지만, 스큐 태스크는 애초에 입력 레코드 수가 수십 배 많아서 느린 것이므로 어느 익스큐터에서 다시 실행해도 결과는 같다. 오히려 자원을 두 배로 소모하고, 외부 시스템에 쓰는 잡이라면 중복 쓰기 위험까지 생긴다. 스큐는 데이터 분포 자체를 바꿔야 하므로 AQE skew join, salting, 브로드캐스트 전환, 버킷 설계로 접근해야 한다. Spark UI에서 느린 태스크의 입력 레코드 수를 중앙값과 비교하면 두 원인을 구분할 수 있다."
+  },
+  {
+    "id": "spark-sub-009",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "Spark의 동적 자원 할당(Dynamic Allocation) 동작 원리를 설명하고, 도입 시 반드시 함께 갖춰야 할 전제 조건과 예상되는 부작용을 서술하라.",
+    "model_answer": "동적 할당은 대기 중인 태스크가 일정 시간 이상 쌓이면(spark.dynamicAllocation.schedulerBacklogTimeout) 익스큐터를 추가로 요청하고, 일정 시간 유휴 상태인 익스큐터는 반납(executorIdleTimeout)하는 기능이다. minExecutors/maxExecutors/initialExecutors로 범위를 정하며, 스테이지마다 필요한 병렬도가 크게 달라지는 파이프라인이나 여러 잡이 클러스터를 공유하는 환경에서 자원 효율을 크게 높인다. 핵심 전제는 익스큐터가 회수되어도 그 익스큐터가 남긴 셔플 파일을 후속 스테이지가 읽을 수 있어야 한다는 점이다. 전통적으로는 각 노드에 외부 셔플 서비스(spark.shuffle.service.enabled)를 상주시켜 셔플 파일 서빙을 익스큐터 수명과 분리했고, Spark 3.x부터는 외부 셔플 서비스를 두기 어려운 K8s 환경을 위해 shuffle tracking(spark.dynamicAllocation.shuffleTracking.enabled)으로 셔플 데이터를 보유한 익스큐터를 회수 대상에서 제외하는 방식이 제공된다. 이 전제가 없으면 익스큐터 회수와 동시에 FetchFailedException이 발생해 스테이지가 재실행된다. 부작용도 분명하다. 캐시를 가진 익스큐터가 회수되면 캐시가 사라져 재계산이 발생하므로 cachedExecutorIdleTimeout을 조정하거나 캐시 중심 잡에서는 비활성화한다. 익스큐터 기동에 수십 초가 걸리는 환경에서는 짧은 잡이 오히려 느려지고, 스케일 인/아웃이 진동하면 오버헤드만 커진다. 또한 maxExecutors 상한을 두지 않으면 한 잡이 큐 전체를 잠식할 수 있어 클러스터 매니저의 큐 정책과 함께 설계해야 한다. 이 경우 캐시 유실이 발생한다.",
+    "keywords": [
+      "schedulerBacklogTimeout",
+      "executorIdleTimeout",
+      "외부 셔플 서비스",
+      "shuffleTracking",
+      "캐시 유실"
+    ],
+    "explanation": "'자원을 자동으로 늘려 준다'는 수준의 답은 부족하다. 익스큐터 회수와 셔플 파일 수명의 충돌을 어떻게 해결하는지가 이 기능의 본질이며, 캐시 유실과 기동 지연이라는 대가를 함께 말할 수 있어야 실제 운영 경험으로 인정된다."
+  },
+  {
+    "id": "spark-sub-010",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "map()이나 UDF 내부에서 외부 DB에 직접 커넥션을 맺으면 안 되는 이유를 설명하고, 익스큐터에서 외부 시스템을 호출해야만 할 때의 올바른 구현 패턴을 서술하라.",
+    "model_answer": "문제는 두 가지다. 첫째는 클로저 직렬화다. 드라이버에서 만든 커넥션 객체를 람다가 캡처하면 Spark가 그 클로저를 익스큐터로 직렬화해 보내려 하는데, 소켓이나 커넥션 핸들은 직렬화 대상이 아니므로 NotSerializableException이 발생하거나, 설령 통과하더라도 다른 JVM에서는 유효하지 않은 핸들이 된다. 둘째는 커넥션 폭발이다. map은 레코드 단위로 호출되므로 레코드마다 커넥션을 열면 수백만 번의 핸드셰이크가 발생하고, 동시에 태스크 병렬도(익스큐터 수 × 코어 수)만큼의 커넥션이 한꺼번에 몰려 DB의 최대 커넥션 한도를 먼저 무너뜨린다. 올바른 패턴은 파티션 단위로 자원을 관리하는 것이다. foreachPartition이나 mapPartitions를 사용해 파티션 시작 시 커넥션을 한 번 열고, 그 안에서 이터레이터를 순회하며 배치 단위로 처리한 뒤 finally에서 닫는다. 더 나아가 익스큐터 JVM(또는 파이썬 워커) 프로세스별 싱글턴이나 lazy 객체로 커넥션 풀을 만들어 여러 태스크가 재사용하게 하면 연결 비용을 더 줄일 수 있다. 함께 고려할 것은 (1) repartition으로 파티션 수를 조절해 동시 커넥션 수를 DB 한도 아래로 억제하고, (2) 단건 쿼리 대신 배치 INSERT/UPDATE로 왕복을 줄이며, (3) 태스크 재시도 시 같은 파티션이 다시 실행되므로 멱등한 upsert로 중복 쓰기를 방어하는 것이다. 애초에 조회가 목적이라면 외부 테이블을 DataFrame으로 읽어 조인하거나, 참조 데이터가 작으면 broadcast 변수로 배포하는 편이 훨씬 안전하고 빠르다.",
+    "keywords": [
+      "클로저 직렬화",
+      "foreachPartition",
+      "커넥션 풀",
+      "동시 커넥션 폭증",
+      "broadcast 변수"
+    ],
+    "explanation": "직렬화 오류만 말하고 끝나면 절반이다. '태스크 병렬도가 곧 동시 커넥션 수'라는 관점으로 DB 쪽 부하까지 예측하는지, 그리고 재시도로 인한 중복 쓰기까지 방어하는지가 변별점이다."
+  },
+  {
+    "id": "spark-sub-011",
+    "category": "spark",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Spark 익스큐터의 통합 메모리 모델에서 실행(execution) 메모리와 스토리지(storage) 메모리의 관계를 설명하고, spark.executor.memory만 늘려도 OOM이 해결되지 않는 경우를 예를 들어 서술하라.",
+    "model_answer": "익스큐터 JVM 힙은 크게 예약 영역, 통합 영역(spark.memory.fraction, 기본 0.6), 사용자 메모리(나머지, 사용자 자료구조와 UDF가 만드는 객체)로 나뉜다. 통합 영역 안에서 실행 메모리(셔플·조인·정렬·집계의 작업 버퍼)와 스토리지 메모리(캐시된 블록, 브로드캐스트 릴레이션)가 하나의 풀을 공유하며 경계가 유동적이다. spark.memory.storageFraction(기본 0.5)은 스토리지가 강제로 빼앗기지 않는 하한선일 뿐이고, 실행 메모리가 부족하면 그 하한 위의 캐시 블록을 축출(evict)해 가져갈 수 있다. 반대 방향은 성립하지 않아 실행 메모리는 스토리지에 의해 축출되지 않는다. 그래서 캐시를 많이 잡아도 잡이 곧바로 죽지는 않지만, 캐시가 조용히 사라져 재계산이 늘고 실행 시간이 들쭉날쭉해진다. spark.executor.memory만 올려도 해결되지 않는 대표 사례는 다음과 같다. (1) 익스큐터당 코어 수가 많은 경우 — 실행 메모리는 동시 실행 태스크가 나눠 쓰므로 코어가 8개면 태스크당 몫은 8분의 1이다. 메모리를 키우기보다 코어 수를 줄이는 편이 태스크당 가용 메모리를 더 확실히 늘린다. (2) OOM이 힙이 아니라 컨테이너 한도에서 발생한 경우 — PySpark의 파이썬 워커, 네이티브 라이브러리, off-heap 버퍼, 네트워크 버퍼는 힙 밖에 있으므로 spark.executor.memoryOverhead(PySpark라면 spark.executor.pyspark.memory)를 늘려야 하며, YARN/K8s가 컨테이너를 kill한 로그를 확인해야 한다. (3) 드라이버 쪽 OOM — collect/toPandas나 대형 브로드캐스트가 원인이면 익스큐터 메모리와 무관하다. (4) 데이터 스큐 — 한 태스크가 처리할 데이터가 열 배면 메모리를 두 배로 늘려도 소용없고 분포 자체를 고쳐야 한다. (5) 한 키의 모든 값을 메모리에 올리는 연산(groupByKey, 거대한 collect_list) — 집계 함수로 대체해야 한다. 즉 축출(eviction)이 일어난다.",
+    "keywords": [
+      "spark.memory.fraction",
+      "storageFraction 하한",
+      "축출(eviction)",
+      "코어 수와 태스크당 메모리",
+      "memoryOverhead"
+    ],
+    "explanation": "실행 메모리와 스토리지 메모리가 '단방향으로만 축출 가능한 공유 풀'이라는 비대칭성을 아는지가 첫 관문이다. 이어서 OOM의 발생 위치(힙 / 컨테이너 / 드라이버)를 구분하고 코어 수와 태스크당 메모리의 반비례 관계를 짚으면 튜닝을 실제로 해 본 사람으로 판단할 수 있다."
+  }
+]

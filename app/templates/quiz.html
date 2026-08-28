@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ category_label }} — 문제 풀이</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+
+  <header class="quiz-head">
+    <a class="back" href="{{ url_for('index') }}">&larr; 카테고리</a>
+    <div class="quiz-title">
+      <strong>{{ category_label }}</strong>
+      <span class="chips">
+        <span class="chip">{{ '전체 유형' if qtype == 'all' else ('객관식' if qtype == 'mcq' else '주관식') }}</span>
+        <span class="chip">{{ '전체 난이도' if difficulty == 'all' else difficulty }}</span>
+      </span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+      <span class="progress-text" id="progressText">불러오는 중…</span>
+    </div>
+  </header>
+
+  <main id="stage">
+    <p class="loading">문제를 불러오는 중입니다…</p>
+  </main>
+
+  <footer class="quiz-foot" id="foot" hidden>
+    <button type="button" class="btn btn-ghost" id="prevBtn">이전</button>
+    <span class="answered-note" id="answeredNote"></span>
+    <button type="button" class="btn btn-primary" id="nextBtn">다음</button>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  const CONFIG = {
+    category: {{ category | tojson }},
+    type: {{ qtype | tojson }},
+    difficulty: {{ difficulty | tojson }},
+    count: {{ count | tojson }}
+  };
+
+  const stage = document.getElementById('stage');
+  const foot = document.getElementById('foot');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  const answeredNote = document.getElementById('answeredNote');
+
+  let questions = [];
+  const answers = {};   // question_id -> number | string
+  let index = 0;
+  let submitting = false;
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  function answeredCount() {
+    return questions.filter(q => {
+      const a = answers[q.id];
+      return typeof a === 'number' ? a >= 0 : !!(a && a.trim());
+    }).length;
+  }
+
+  function renderProgress() {
+    const pct = questions.length ? ((index + 1) / questions.length) * 100 : 0;
+    progressBar.style.width = pct + '%';
+    progressText.textContent = `${index + 1} / ${questions.length}`;
+    answeredNote.textContent = `답변 ${answeredCount()} / ${questions.length}`;
+  }
+
+  function render() {
+    const q = questions[index];
+    stage.replaceChildren();
+
+    const card = el('article', 'card');
+
+    const meta = el('div', 'q-meta');
+    meta.appendChild(el('span', 'chip chip-cat', q.category));
+    meta.appendChild(el('span', 'chip chip-' + q.difficulty, q.difficulty));
+    meta.appendChild(el('span', 'chip', q.type === 'mcq' ? '객관식' : '주관식'));
+    meta.appendChild(el('span', 'q-id', q.id));
+    card.appendChild(meta);
+
+    card.appendChild(el('h1', 'q-text', q.question));
+
+    if (q.type === 'mcq') {
+      const list = el('div', 'choices');
+      (q.choices || []).forEach((choice, i) => {
+        const label = el('label', 'choice');
+        const input = el('input');
+        input.type = 'radio';
+        input.name = 'choice-' + q.id;
+        input.value = String(i);
+        input.checked = answers[q.id] === i;
+        input.addEventListener('change', () => {
+          answers[q.id] = i;
+          renderProgress();
+          label.closest('.choices').querySelectorAll('.choice')
+            .forEach(c => c.classList.remove('picked'));
+          label.classList.add('picked');
+        });
+        if (answers[q.id] === i) label.classList.add('picked');
+        label.appendChild(input);
+        // 선택지 라벨: 0~7 은 A~H, 9지선다 이상은 숫자로 폴백 (result.html 과 동일 규칙)
+        label.appendChild(el('span', 'choice-key', i < 8 ? String.fromCharCode(65 + i) : String(i + 1)));
+        label.appendChild(el('span', 'choice-text', choice));
+        list.appendChild(label);
+      });
+      card.appendChild(list);
+    } else {
+      const box = el('textarea', 'answer-input');
+      box.rows = 9;
+      box.placeholder = '핵심 개념과 근거를 포함해 서술하세요. 채점은 키워드 포함 비율로 부분 점수가 계산됩니다.';
+      box.value = answers[q.id] || '';
+      box.addEventListener('input', () => {
+        answers[q.id] = box.value;
+        renderProgress();
+      });
+      card.appendChild(box);
+      card.appendChild(el('p', 'hint', '모범 답안과 키워드는 제출 후 결과 화면에서 확인할 수 있습니다.'));
+    }
+
+    stage.appendChild(card);
+
+    prevBtn.disabled = index === 0;
+    nextBtn.textContent = index === questions.length - 1 ? '제출하고 채점' : '다음';
+    nextBtn.classList.toggle('btn-submit', index === questions.length - 1);
+    renderProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function submit() {
+    if (submitting) return;
+    const missing = questions.length - answeredCount();
+    if (missing > 0 && !confirm(`${missing}문항이 비어 있습니다. 그대로 제출할까요?`)) return;
+
+    submitting = true;
+    nextBtn.disabled = true;
+    nextBtn.textContent = '채점 중…';
+
+    const payload = {
+      answers: questions.map(q => ({
+        question_id: q.id,
+        answer: q.type === 'mcq'
+          ? (typeof answers[q.id] === 'number' ? answers[q.id] : -1)
+          : (answers[q.id] || '')
+      }))
+    };
+
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '채점에 실패했습니다');
+      window.location.href = data.result_url;
+    } catch (err) {
+      submitting = false;
+      nextBtn.disabled = false;
+      nextBtn.textContent = '제출하고 채점';
+      alert('채점 중 오류가 발생했습니다: ' + err.message);
+    }
+  }
+
+  prevBtn.addEventListener('click', () => {
+    if (index > 0) { index--; render(); }
+  });
+  nextBtn.addEventListener('click', () => {
+    if (index < questions.length - 1) { index++; render(); } else { submit(); }
+  });
+
+  const params = new URLSearchParams({
+    type: CONFIG.type,
+    difficulty: CONFIG.difficulty,
+    count: CONFIG.count
+  });
+
+  fetch(`/api/questions/${encodeURIComponent(CONFIG.category)}?${params}`)
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '문제를 불러오지 못했습니다');
+      return data;
+    })
+    .then(data => {
+      questions = data.questions || [];
+      if (!questions.length) {
+        progressText.textContent = '0 / 0';
+        stage.replaceChildren();
+        const box = el('div', 'empty-state');
+        box.appendChild(el('h2', null, '조건에 맞는 문제가 없습니다'));
+        box.appendChild(el('p', 'muted', '유형이나 난이도 조건을 완화한 뒤 다시 시도하세요.'));
+        const a = el('a', 'btn btn-primary', '카테고리로 돌아가기');
+        a.href = '/';
+        box.appendChild(a);
+        stage.appendChild(box);
+        return;
+      }
+      foot.hidden = false;
+      render();
+    })
+    .catch(err => {
+      stage.replaceChildren();
+      const box = el('div', 'banner banner-error', err.message);
+      stage.appendChild(box);
+      progressText.textContent = '오류';
+    });
+})();
+</script>
+</body>
+</html>

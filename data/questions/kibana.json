@@ -1,0 +1,212 @@
+[
+  {
+    "id": "kibana-mcq-001",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "최신 버전 Kibana에서 데이터 뷰(Data View, 구 인덱스 패턴)의 역할로 가장 정확한 것은?",
+    "choices": [
+      "ElasticSearch에 새 인덱스를 생성하고 매핑을 정의한다",
+      "조회 대상 인덱스 집합(와일드카드)과 시간 필드·필드 포맷을 Kibana 쪽에 정의해 Discover/시각화가 참조하게 한다",
+      "인덱스 데이터를 Kibana 내부 저장소로 복제해 조회 속도를 높인다",
+      "인덱스의 샤드 배치와 ILM 정책을 관리한다"
+    ],
+    "answer_index": 1,
+    "explanation": "데이터 뷰는 Kibana의 saved object로, `logs-*` 같은 인덱스 패턴, 기본 시간 필드, 필드 포맷터, 스크립트/런타임 필드 정의를 담는 메타데이터일 뿐 데이터를 복제하지 않는다. 인덱스 생성·매핑(1번)과 샤드/ILM(4번)은 ElasticSearch 영역이다. 8.0에서 index pattern이 data view로 명칭이 바뀌었지만 개념은 동일하다."
+  },
+  {
+    "id": "kibana-mcq-002",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Discover에서 `message:err*~2` 같은 퍼지·정규식 검색이 필요하다. KQL과 Lucene 쿼리 문법의 차이로 옳은 것은?",
+    "choices": [
+      "Lucene 문법은 nested 필드를 조회할 수 없어 KQL만 써야 한다",
+      "KQL은 클라이언트에서 실행되고 Lucene은 서버에서 실행된다",
+      "KQL은 정규식과 퍼지 검색을 지원하지 않으므로 필요한 경우 쿼리 언어를 Lucene으로 전환해야 한다",
+      "두 문법은 완전히 동일하며 표기만 다르다"
+    ],
+    "answer_index": 2,
+    "explanation": "KQL은 자동완성과 nested 필드·런타임 필드 지원이 좋고 스크립트 필드 필터링도 가능하지만, 정규식(`/pattern/`)과 퍼지(`~`) 검색은 지원하지 않는다. 이런 경우 검색 창의 쿼리 언어를 Lucene으로 바꿔야 한다. 두 문법 모두 최종적으로는 ElasticSearch 쿼리 DSL로 변환되어 서버에서 실행되므로 2번은 틀리다."
+  },
+  {
+    "id": "kibana-mcq-003",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kibana의 주요 앱과 용도가 잘못 짝지어진 것은?",
+    "choices": [
+      "Discover — 원시 문서를 시간 순으로 탐색하고 필드 필터링·저장된 검색을 만드는 데 사용",
+      "Lens — 드래그 앤 드롭으로 필드를 얹어 차트를 만들고 시각화 유형을 자동 추천",
+      "Dev Tools Console — ElasticSearch REST API를 직접 호출해 쿼리·매핑을 테스트",
+      "Canvas — 클러스터 노드의 힙·디스크 지표를 수집해 저장하는 모니터링 에이전트"
+    ],
+    "answer_index": 3,
+    "explanation": "Canvas는 픽셀 단위로 배치하는 프레젠테이션형 인포그래픽 도구이지 지표 수집 에이전트가 아니다. 지표 수집은 Metricbeat/Elastic Agent가 하고, 시각화는 Stack Monitoring이 담당한다. 나머지 세 항목은 정확한 설명이며, 이런 앱 구분 문제는 \"어떤 도구로 이 요구사항을 풀 것인가\"를 묻는 후속 질문으로 이어지는 경우가 많다."
+  },
+  {
+    "id": "kibana-mcq-004",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Kibana에서 만든 대시보드·데이터 뷰·알림 규칙 등의 saved object는 어디에 저장되는가?",
+    "choices": [
+      "ElasticSearch의 `.kibana*` 시스템 인덱스에 문서로 저장된다",
+      "Kibana 서버의 로컬 파일 시스템(`config/saved_objects.yml`)",
+      "브라우저 로컬 스토리지에 사용자별로 저장된다",
+      "별도의 RDB(기본 PostgreSQL)에 저장된다"
+    ],
+    "answer_index": 0,
+    "explanation": "Kibana는 자체 데이터베이스를 갖지 않고 모든 상태를 ElasticSearch의 `.kibana`, `.kibana_task_manager` 등 시스템 인덱스에 저장한다. 따라서 Kibana 인스턴스를 늘려도 상태가 공유되고, 반대로 이 인덱스가 손상되면 대시보드가 모두 사라진다 — 스냅샷 백업 대상에 반드시 포함해야 하는 이유다. 이관은 Saved Objects API 또는 NDJSON export/import로 수행한다."
+  },
+  {
+    "id": "kibana-mcq-005",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "특정 대시보드만 로딩에 30초가 걸린다. 원인 파악을 위해 가장 먼저 사용할 도구와 확인 항목으로 적절한 것은?",
+    "choices": [
+      "Kibana 서버를 재시작해 saved object 캐시를 초기화한다",
+      "브라우저 캐시를 지우고 시크릿 모드에서 재접속한다",
+      "데이터 뷰를 삭제하고 다시 생성한다",
+      "Kibana Inspector로 각 패널이 보낸 ES 요청/응답과 소요 시간을 확인해 병목 패널을 특정한다"
+    ],
+    "answer_index": 3,
+    "explanation": "대시보드의 각 패널은 독립적인 ES 요청을 발생시키므로, Inspector의 Requests 뷰에서 패널별 쿼리 DSL·응답 시간·히트 수를 보면 어떤 패널이 병목인지 즉시 드러난다. 이후 해당 쿼리를 Dev Tools에서 `profile: true`로 분해하거나 ES slow log와 대조한다. 브라우저 개발자 도구의 Network 탭은 렌더링/전송 문제 구분에 보조적으로 쓴다. 나머지 선택지는 원인 규명 없이 증상을 흐리는 조치다."
+  },
+  {
+    "id": "kibana-mcq-006",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Kibana Alerting의 규칙(rule)과 Watcher를 비교한 설명으로 옳은 것은?",
+    "choices": [
+      "Watcher는 Kibana UI 전용이고 Alerting은 ES API 전용이다",
+      "Alerting은 규칙 타입으로 조건 탐지를 추상화하고 커넥터로 액션을 재사용하며 RBAC·스페이스와 통합되는 반면, Watcher는 input/condition/transform/action을 직접 정의하는 저수준 방식이다",
+      "Alerting은 상태를 저장하지 않아 복구(recovered) 알림을 보낼 수 없다",
+      "Watcher는 폐기되어 최신 버전에서 동작하지 않는다"
+    ],
+    "answer_index": 1,
+    "explanation": "Alerting은 index threshold, ES query, APM/Metrics/Logs 임계값 등 사전 정의된 규칙 타입과 이메일·Slack·PagerDuty·Webhook 커넥터를 제공하고, 알림 상태를 추적해 조건 해소 시 recovered 액션을 실행한다(3번이 틀린 이유). Watcher는 여전히 지원되지만 스크립트·체이닝·세밀한 API 제어가 필요한 특수 케이스용이다. 규칙 실행은 Kibana 서버의 task manager가 담당하므로 Kibana가 죽으면 알림도 멈춘다는 점이 Watcher(ES 측 실행)와의 중요한 운영 차이다."
+  },
+  {
+    "id": "kibana-mcq-007",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "런타임 필드(runtime field)의 특성으로 옳은 것은?",
+    "choices": [
+      "정의 시점에 전체 문서를 재색인하므로 생성에 오랜 시간이 걸린다",
+      "런타임 필드는 집계와 정렬에 사용할 수 없다",
+      "색인에 저장되지 않고 쿼리 시점에 `_source`나 doc_values로부터 계산되므로 스키마를 즉시 바꿀 수 있지만 대량 스캔 시 비용이 크다",
+      "Kibana에서만 정의할 수 있고 ElasticSearch 매핑에는 넣을 수 없다"
+    ],
+    "answer_index": 2,
+    "explanation": "런타임 필드는 schema on read 방식으로, reindex 없이 필드를 추가하거나 잘못된 매핑을 임시 보정할 수 있고 검색·집계·정렬에도 쓸 수 있다(2번이 틀린 이유). 대신 매 쿼리마다 스크립트를 평가하므로 문서 수가 많을수록 느리다. 따라서 탐색·핫픽스 단계에서는 런타임 필드로 시작하고, 상시 사용되는 필드로 확정되면 실제 매핑 필드로 승격해 재색인하는 것이 권장 흐름이다. 정의는 인덱스 매핑, 검색 요청, 데이터 뷰 어느 쪽에서도 가능하다."
+  },
+  {
+    "id": "kibana-mcq-008",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "개발 스페이스에서 만든 대시보드를 운영 스페이스로 export/import했더니 패널들이 \"Could not locate that data view\" 오류를 낸다. 가장 그럴듯한 원인은?",
+    "choices": [
+      "saved object는 스페이스 단위로 격리되며 대시보드가 참조하는 데이터 뷰 ID가 대상 스페이스에 존재하지 않기 때문이다",
+      "운영 클러스터의 인덱스에 레플리카가 없어 데이터 뷰가 인식되지 않기 때문이다",
+      "스페이스가 다르면 KQL 문법이 달라지기 때문이다",
+      "대시보드는 스페이스 간 이동이 원천적으로 불가능하기 때문이다"
+    ],
+    "answer_index": 0,
+    "explanation": "대시보드는 패널 → 시각화 → 데이터 뷰로 이어지는 참조(reference) 체인을 ID로 들고 있다. 스페이스는 saved object를 격리하므로 참조되는 데이터 뷰까지 함께 내보내거나(export 시 \"Include related objects\"), import 시 기존 데이터 뷰로 참조를 재지정해야 한다. CI/CD로 대시보드를 배포한다면 데이터 뷰 ID를 환경 간에 고정(명시적 ID 지정)하는 것이 재현성 있는 해법이다."
+  },
+  {
+    "id": "kibana-mcq-009",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "패널 25개짜리 경영진용 대시보드가 최근 1년 범위로 열릴 때마다 클러스터 CPU가 치솟는다. 근본적인 개선책으로 가장 적절한 것은?",
+    "choices": [
+      "각 패널의 자동 새로고침 주기를 5초로 줄여 결과를 캐시에 유지한다",
+      "transform(또는 downsampling)으로 사전 집계된 요약 인덱스를 만들고 대시보드가 원시 로그 대신 이를 조회하게 한다",
+      "Kibana 인스턴스를 증설해 대시보드 요청을 분산한다",
+      "데이터 뷰의 와일드카드를 넓혀 더 많은 인덱스를 한 번에 읽게 한다"
+    ],
+    "answer_index": 1,
+    "explanation": "패널 25개는 곧 ES 요청 25개이고, 1년 범위면 각각이 수백 개 샤드를 스캔한다. 근본 해법은 조회 시점 집계량을 줄이는 것 — continuous transform이나 downsampling으로 시간 버킷 단위 요약 인덱스를 만들어 두면 스캔 대상이 수십~수백 배 줄어든다. 1번은 부하를 오히려 증폭시키고, 3번은 병목이 ES 쪽이므로 효과가 없으며, 4번은 스캔 범위를 늘려 악화시킨다. 부수적으로 패널 수 축소·기본 시간 범위 단축·`search:timeout` 설정도 병행한다."
+  },
+  {
+    "id": "kibana-mcq-010",
+    "category": "kibana",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "1분 주기로 설정한 알림 규칙이 실제로는 3~5분 간격으로 실행되고 일부는 누락된다. 원인 진단으로 가장 타당한 것은?",
+    "choices": [
+      "ElasticSearch의 refresh_interval이 1초라서 규칙 조건이 평가되지 못한 것이다",
+      "규칙 인터벌은 Kibana 라이선스 등급에 따라 강제로 5분으로 고정된다",
+      "브라우저를 닫으면 규칙이 실행되지 않기 때문이다",
+      "Kibana의 규칙 실행 주기는 근사치이며, task manager가 클레임하는 태스크 처리량 한계를 규칙 수가 초과하면 실행이 밀린다"
+    ],
+    "answer_index": 3,
+    "explanation": "Alerting 규칙은 Kibana 서버의 task manager가 `.kibana_task_manager` 인덱스에서 태스크를 폴링·클레임해 실행하는 백그라운드 작업이다. 규칙 수와 액션 수가 늘면 워커 용량(`xpack.task_manager.max_workers`, `poll_interval`)에 막혀 실행이 지연되고 드리프트가 생긴다. 대응은 Stack Management의 task manager 헬스 API로 용량 포화를 확인하고, Kibana 인스턴스를 늘려 실행을 분산하거나 규칙 인터벌을 현실적으로 조정하는 것이다. 규칙 실행은 서버 측이므로 3번은 틀리다."
+  },
+  {
+    "id": "kibana-sub-001",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "\"Kibana 대시보드가 느리다\"는 제보를 받았을 때, 어디까지가 Kibana 문제이고 어디부터가 ElasticSearch 문제인지 어떻게 구분해 진단하겠는가?",
+    "model_answer": "먼저 계층을 나눈다. (1) 브라우저 계층 — 개발자 도구 Network/Performance 탭에서 요청은 빨리 끝났는데 렌더링이 느린지 확인한다. 패널 수가 많거나 테이블 행 수·필드 목록이 과도하면 클라이언트 렌더링이 병목이다. (2) Kibana 계층 — Inspector의 Requests에서 패널별 요청 시간과 요청 개수를 본다. saved object 로딩, 데이터 뷰 필드 목록(`_field_caps`) 조회가 느리면 데이터 뷰의 와일드카드가 너무 넓거나 필드 수가 많다는 신호다. (3) ElasticSearch 계층 — 병목 패널의 쿼리를 Dev Tools에서 `profile: true`로 실행하고, ES slow log·`_cat/thread_pool`·노드 CPU/GC 지표와 대조한다. 개선책은 계층별로 다르다. 브라우저 병목이면 패널 분할·행 수 제한, Kibana 병목이면 데이터 뷰 범위 축소와 불필요 필드 정리, ES 병목이면 시간 범위 축소, filter 컨텍스트 활용, 고카디널리티 집계 제거, transform 기반 사전 집계, 샤드 수 정규화로 접근한다.",
+    "keywords": ["Inspector", "_field_caps", "profile: true", "slow log", "패널별 요청"],
+    "explanation": "브라우저/Kibana/ES 세 계층으로 문제를 분리하고 각 계층의 관측 수단(Inspector, Network 탭, Profile API, slow log)을 지목하는지가 핵심이다."
+  },
+  {
+    "id": "kibana-sub-002",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "데이터 뷰 `logs-*`에서 특정 필드가 \"conflict\" 타입으로 표시되어 필터·집계가 동작하지 않는다. 원인과 단기·근본 해결책을 설명하라.",
+    "model_answer": "원인은 와일드카드가 매칭하는 여러 인덱스에서 같은 필드가 서로 다른 타입으로 매핑된 것이다. 예를 들어 `status`가 어제 인덱스에서는 long인데 오늘 인덱스에서는 동적 매핑으로 keyword가 되면 Kibana의 `_field_caps` 응답에 두 타입이 섞여 conflict, 즉 필드 타입 충돌로 표시되고, 타입에 의존하는 집계·범위 필터가 실패한다. 단기 대응은 (1) 데이터 뷰 범위를 타입이 일관된 인덱스로 좁히거나, (2) 같은 이름의 런타임 필드를 정의해 타입을 하나로 강제 캐스팅하는 것이다 — 재색인 없이 대시보드를 살릴 수 있다. 근본 해결은 인덱스 템플릿에 명시적 매핑을 정의해 새 인덱스부터 타입을 고정하고, 동적 매핑에 의존하지 않도록 dynamic_templates나 `dynamic: strict`를 적용하는 것이다. 과거 인덱스는 올바른 매핑의 새 인덱스로 reindex하거나, 보관 기간이 짧다면 ILM 만료로 자연 소멸시키고 그 사이만 런타임 필드로 버틴다. 근본적으로는 ECS 등 공통 스키마를 강제해 서비스별 로그가 같은 필드명을 다른 의미/타입으로 쓰지 않도록 하는 것이 예방책이다.",
+    "keywords": ["_field_caps", "필드 타입 충돌", "런타임 필드", "인덱스 템플릿", "reindex"],
+    "explanation": "런타임 필드를 '임시 캐스팅 도구'로 쓰고 템플릿 고정을 근본책으로 제시하는, 단기/근본 분리 대응이 실무형 답변이다."
+  },
+  {
+    "id": "kibana-sub-003",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "결제 서비스 오류율 급증을 감지하는 Kibana 알림을 설계하려 한다. 규칙 구성 요소와 알림 폭주(alert storm)를 막기 위한 장치를 설명하라.",
+    "model_answer": "구성 요소는 규칙 타입, 조건, 스케줄, 액션이다. Elasticsearch query 규칙 또는 index threshold 규칙으로 `service.name: payment AND http.response.status_code >= 500`의 분당 카운트가 임계값을 넘는지 평가하고, 실행 주기를 1분으로 잡되 데이터 인입 지연을 감안해 조회 창을 5분 등으로 겹치게 설정한다. group by(예: `service.name`, `host.name`)를 걸면 인스턴스별로 알림이 개별 추적되어 어디가 문제인지 즉시 드러난다. 액션은 커넥터(Slack, PagerDuty, Webhook)에 연결하고, 액션 그룹/recovered 구성을 나눠 활성(threshold met)과 복구(recovered)를 따로 정의하면 조건 해소 시에도 알림이 가서 수동 확인 부담이 준다. 알림 폭주 방지 장치로는 (1) throttle/alert delay 조합 — throttle(notify only on status change)로 조건이 유지되는 동안 반복 발송을 억제하고, alert delay로 N회 연속 위반 시에만 알림을 발생시켜 스파이크 노이즈를 제거, (2) 절대 카운트 대신 오류 '비율'을 지표로 삼아 트래픽 변동에 둔감하게 만들기, (3) 유지보수 윈도우(maintenance window)로 배포 시간대 알림 차단, (4) 규칙 수가 많다면 task manager 용량을 함께 점검하는 것이 있다.",
+    "keywords": ["Elasticsearch query 규칙", "액션 그룹/recovered", "커넥터", "throttle/alert delay", "유지보수 윈도우"],
+    "explanation": "조건 정의만이 아니라 복구 알림, 반복 억제, 유지보수 윈도우 같은 운영 장치까지 설계에 포함하는지가 변별점이다."
+  },
+  {
+    "id": "kibana-sub-004",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "여러 팀이 하나의 Elastic 클러스터를 공유한다. Kibana에서 팀별로 자기 데이터만 보게 하고 대시보드를 격리하려면 어떤 기능을 어떻게 조합하겠는가?",
+    "model_answer": "3개 층으로 설계한다. (1) 조직 격리 — Kibana Spaces로 팀별 스페이스를 만들어 대시보드·데이터 뷰·알림 규칙 같은 saved object를 분리한다. 스페이스는 UI 기능(피처) 단위로도 접근을 제어할 수 있어 특정 팀에게 Dev Tools나 Stack Management를 숨길 수 있다. (2) 인가 — 롤(role)에 Kibana 권한(스페이스별 read/all, 피처별 권한)과 ElasticSearch 인덱스 권한(`logs-teamA-*`에 read)을 함께 부여하고, 사용자/그룹은 SSO(SAML/OIDC)나 LDAP 롤 매핑으로 연결한다 — 스페이스가 UI 격리라면 이 롤 매핑/RBAC 계층이 실제 인가를 담당한다. 스페이스 격리만으로는 Dev Tools나 API 우회 조회를 막을 수 없으므로 인덱스 권한이 실제 데이터 경계다. (3) 행·열 수준 통제 — 같은 인덱스를 공유해야 한다면 DLS(document level security)로 `team` 필드 기반 필터를, FLS(field level security)로 민감 필드 마스킹을 적용한다. 다만 DLS/FLS는 상용 라이선스 기능이고 쿼리 오버헤드와 캐시 효율 저하가 있으므로, 가능하면 인덱스 자체를 팀별로 분리하는 편이 단순하고 빠르다. 운영 측면에서는 감사 로깅을 켜 접근 이력을 남기고, 공용 대시보드는 별도 스페이스에 두고 saved object 복사 기능으로 배포한다.",
+    "keywords": ["Spaces", "롤 매핑/RBAC", "인덱스 권한", "DLS/FLS", "감사 로깅"],
+    "explanation": "\"스페이스는 UI 격리일 뿐 데이터 보안 경계가 아니다\"라는 점을 짚고 ES 인덱스 권한을 실제 경계로 제시하는지가 핵심 변별점이다."
+  },
+  {
+    "id": "kibana-sub-005",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Kibana 대시보드와 알림 규칙을 코드로 관리(GitOps)하고 개발→스테이징→운영으로 승격하는 파이프라인을 설계하라. 어떤 어려움이 예상되는가?",
+    "model_answer": "설계는 Saved Objects API export/import를 축으로 한다. 개발 스페이스에서 작성한 대시보드를 `_export`(NDJSON, 관련 객체 포함)로 내려받아 Git에 커밋하고, CI에서 대상 환경의 Kibana에 `_import?overwrite=true`로 배포한다. 알림 규칙은 Alerting API로, 데이터 뷰는 Data Views API로 별도 관리하되 데이터 뷰 ID 고정(환경마다 같은 ID를 명시적으로 지정)으로 참조가 깨지지 않게 한다. 인덱스 템플릿·ILM 정책·ingest pipeline은 ElasticSearch API 또는 Terraform/Elastic Stack provider로 함께 버전 관리해 대시보드가 기대하는 스키마와 동기화한다. 예상되는 어려움은 (1) NDJSON에 UI 상태가 통째로 직렬화되어 diff 가독성이 낮고 충돌 병합이 어렵다는 점, (2) 환경별 값 치환이 필요하다는 점 — 데이터 뷰 인덱스 패턴, 커넥터 대상, 임계값처럼 환경마다 달라야 하는 값을 템플릿 변수로 분리해야 한다, (3) saved object 스키마가 마이너 버전 업그레이드마다 마이그레이션되므로 하위 버전 Kibana로의 import가 실패할 수 있어 환경 간 버전을 맞춰야 한다는 점, (4) UI에서 직접 수정한 변경이 Git과 어긋나는 드리프트 — 운영 스페이스를 읽기 전용 롤로 잠그고 변경은 반드시 파이프라인을 거치게 하는 규율이 필요하다. 배포 후에는 대시보드 스모크 테스트(패널이 오류 없이 데이터를 반환하는지 API로 확인)와 알림 규칙 dry-run으로 회귀를 잡는다. 정리하면 버전 마이그레이션/드리프트 통제가 이 파이프라인의 마지막 관문이다.",
+    "keywords": ["Saved Objects API export/import", "NDJSON", "데이터 뷰 ID 고정", "환경별 값 치환", "버전 마이그레이션/드리프트"],
+    "explanation": "export/import 절차만 나열하는 데 그치지 않고 ID 고정, 환경 변수 치환, 버전 호환성, 드리프트 통제라는 실제 운영 난점을 짚는지가 고급 변별점이다."
+  },
+  {
+    "id": "kibana-sub-006",
+    "category": "kibana",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "새 서비스의 로그를 ElasticSearch에 적재한 뒤 Kibana에서 조회하려고 한다. 화면에 데이터가 뜨기까지 무엇을 먼저 만들어야 하고, 그것을 만들 때 지정하는 항목들이 각각 어떤 의미인지 설명하라.",
+    "model_answer": "가장 먼저 만들어야 하는 것은 데이터 뷰(Data View, 8.0 이전 명칭은 index pattern)다. Kibana는 클러스터의 인덱스를 자동으로 보여주지 않고, \"어떤 인덱스들을 하나의 논리적 데이터 집합으로 볼 것인가\"를 사용자가 선언해야 조회 화면이 그것을 참조한다. 생성 시 지정하는 항목은 세 가지다. (1) 인덱스 패턴 — `logs-payment-*`처럼 와일드카드로 대상 인덱스 집합을 지정한다. 로그는 보통 날짜나 롤오버 단위로 인덱스가 쪼개지므로 와일드카드로 묶어야 여러 날짜를 한 번에 조회할 수 있다. 패턴을 지나치게 넓게 잡으면 무관한 인덱스까지 스캔해 느려지고, 같은 필드명이 인덱스마다 다른 타입이면 타입 충돌(conflict)이 발생하므로 필요한 범위로 좁히는 것이 좋다. (2) 시간 필드 — `@timestamp`처럼 문서의 시각을 담은 date 필드를 고른다. 이 값을 기준으로 화면 우측 상단의 시간 범위 선택기와 히스토그램이 동작하며, 시간 필드를 지정하지 않으면 시간 기반 필터링과 시계열 시각화를 쓸 수 없다. (3) 필드 포맷·런타임 필드 등 표시 옵션 — 바이트를 KB/MB로, 에포크 숫자를 날짜로 보여주는 포맷터를 걸거나, 재색인 없이 계산 필드를 추가할 수 있다. 데이터 뷰 자체는 데이터를 복제하지 않고 Saved Objects로 `.kibana` 시스템 인덱스에 메타데이터만 저장된다. 이후 흐름은 Discover에서 원시 문서를 확인하며 KQL로 필터를 다듬고, 쓸 만한 조건은 저장된 검색(saved search)으로 남긴 뒤 Lens 등으로 시각화를 만들고 마지막에 대시보드에 패널로 모으는 순서다. 시각화와 대시보드는 모두 이 데이터 뷰를 ID로 참조하므로, 데이터 뷰를 지우거나 다른 스페이스로 옮기면 참조가 끊겨 패널이 오류를 낸다.",
+    "keywords": ["데이터 뷰", "인덱스 패턴", "시간 필드", "Saved Objects", "저장된 검색"],
+    "explanation": "기본기 문항이지만 \"데이터 뷰는 메타데이터일 뿐 데이터를 복제하지 않는다\", \"시간 필드가 있어야 시간 범위 선택기가 동작한다\", \"시각화·대시보드가 데이터 뷰를 ID로 참조한다\"는 세 가지를 짚는지가 변별점이다. 단순히 \"인덱스 패턴을 만든다\"에서 멈추면 이후의 참조 체인·타입 충돌 문제를 설명하지 못한다."
+  }
+]

@@ -1,0 +1,370 @@
+[
+  {
+    "id": "scala-mcq-001",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Spark Dataset의 스키마 타입으로 Scala case class가 널리 쓰이는 가장 직접적인 이유는?",
+    "choices": [
+      "case class는 JVM 힙 대신 off-heap에 저장되어 GC 부담이 없기 때문",
+      "case class는 상속이 불가능해 Spark가 리플렉션을 생략할 수 있기 때문",
+      "case class는 Product 타입이며 컴파일 시점에 Encoder가 자동 유도되어 컬럼 스키마로 매핑되기 때문",
+      "case class 필드는 자동으로 var가 되어 Spark가 in-place로 값을 갱신할 수 있기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "case class는 scala.Product를 구현하며, Spark의 Encoders는 이 구조를 컴파일 타임에 분석해 필드명·타입을 그대로 컬럼 스키마로 유도한다. 덕분에 `import spark.implicits._`만으로 Dataset[T] 변환이 가능하다. case class도 일반 객체와 동일하게 JVM 힙에 할당되므로 off-heap 저장과는 무관하고, 기본 필드는 var가 아니라 val 불변이라 in-place 갱신도 성립하지 않는다. 상속 제약은 Encoder 유도와 직접 관계가 없다."
+  },
+  {
+    "id": "scala-mcq-002",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "외부 소스에서 읽은 레코드의 선택적 필드를 Scala로 모델링할 때 `Option[String]`을 쓰는 이유로 가장 적절한 것은?",
+    "choices": [
+      "Option은 null보다 메모리를 적게 사용해 대용량 배치에서 유리하다",
+      "Option은 직렬화 대상에서 제외되어 셔플 트래픽을 줄인다",
+      "Option을 쓰면 Spark가 해당 컬럼을 자동으로 NOT NULL 제약으로 만든다",
+      "값의 부재 가능성을 타입에 드러내어 컴파일 시점에 처리 누락을 강제할 수 있다"
+    ],
+    "answer_index": 3,
+    "explanation": "Option의 본질적 가치는 성능이 아니라 타입 안전성이다. `Option[String]`은 값이 없을 수 있음을 시그니처에 드러내므로, map/getOrElse/패턴 매칭으로 부재 케이스를 다루도록 강제해 런타임 NPE를 줄인다. Option은 Some 래퍼 객체가 추가로 생기므로 메모리를 오히려 더 쓰고, Spark에서 Option 필드는 NOT NULL 제약이 아니라 nullable 컬럼으로 매핑되며, 직렬화 대상에서 제외되지도 않는다."
+  },
+  {
+    "id": "scala-mcq-003",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "다음 중 Scala `lazy val`의 동작을 정확히 설명한 것은?",
+    "choices": [
+      "선언 시점에 즉시 계산되지만 결과를 캐시하지 않는다",
+      "첫 접근 시점에 한 번만 계산되고 그 결과가 캐시되어 재사용된다",
+      "참조될 때마다 매번 다시 계산된다",
+      "컴파일러가 계산을 완전히 제거하고 기본값으로 대체한다"
+    ],
+    "answer_index": 1,
+    "explanation": "`lazy val`은 초기화를 첫 접근 시점까지 미루고, 계산된 값을 저장해 이후에는 캐시된 값을 반환한다(초기화는 스레드 안전하게 한 번만 수행). 매 참조마다 재계산되는 것은 `def`와 by-name 파라미터(`=> T`)의 동작이다. 데이터 엔지니어링에서는 executor 로컬에서 커넥션·클라이언트를 지연 생성해 드라이버에서 직렬화되지 않게 하는 패턴에 자주 쓰인다."
+  },
+  {
+    "id": "scala-mcq-004",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "이벤트 타입을 `sealed trait Event`와 그 하위 case class들로 모델링했을 때 얻는 실질적 이점은?",
+    "choices": [
+      "패턴 매칭에서 처리하지 않은 하위 타입이 있으면 컴파일러가 경고를 준다",
+      "런타임에 새로운 하위 타입을 동적으로 추가할 수 있다",
+      "모든 하위 타입이 자동으로 같은 Spark 파티션에 배치된다",
+      "JSON 직렬화 시 스키마 검증이 자동으로 수행된다"
+    ],
+    "answer_index": 0,
+    "explanation": "sealed는 하위 타입을 같은 파일 내로 제한하므로 컴파일러가 모든 경우를 알 수 있고, match가 비완전(non-exhaustive)하면 경고를 낸다. 이벤트 스키마가 늘어날 때 처리 누락을 컴파일 단계에서 잡아주는 것이 핵심 이점이다. sealed는 오히려 외부에서의 하위 타입 확장을 막고(2번 오답), 파티셔닝이나 직렬화 검증과는 무관하다."
+  },
+  {
+    "id": "scala-mcq-005",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "Spark 잡에서 `org.apache.spark.SparkException: Task not serializable`이 발생했다. 가장 흔한 원인은?",
+    "choices": [
+      "RDD의 파티션 수가 executor 코어 수보다 많아서",
+      "case class 필드 수가 22개를 초과해서",
+      "map/filter에 넘긴 클로저가 직렬화 불가능한 객체를 필드로 가진 외부 클래스 인스턴스를 캡처해서",
+      "드라이버와 executor의 Scala 버전이 서로 달라서"
+    ],
+    "answer_index": 2,
+    "explanation": "클로저가 클래스의 인스턴스 멤버(예: 직렬화 불가능한 DB 커넥션, 로거)를 참조하면 Scala는 바깥 `this` 전체를 캡처해 함께 직렬화하려 하고, 이때 NotSerializableException이 발생한다. 해결책은 필요한 값만 지역 val로 복사하거나, 객체를 executor 내부에서 `lazy val`/`mapPartitions`로 생성하거나, 싱글턴 `object`에 두는 것이다. 4번은 별개의 바이너리 호환성 오류로 다른 예외 형태로 나타난다."
+  },
+  {
+    "id": "scala-mcq-006",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "`import spark.implicits._`가 실제로 제공하는 것은?",
+    "choices": [
+      "SparkSession을 전역 싱글턴으로 등록해 어디서든 접근 가능하게 한다",
+      "Java 컬렉션을 Scala 컬렉션으로 변환하는 암묵적 변환을 제공한다",
+      "모든 DataFrame 연산을 자동으로 캐시한다",
+      "Encoder 인스턴스와 암묵적 변환(toDF/toDS, $\"col\" 문법)을 암묵적 스코프에 주입한다"
+    ],
+    "answer_index": 3,
+    "explanation": "`spark.implicits._`는 SQLImplicits가 정의한 암묵적 Encoder(기본 타입, Product/case class 등)와 로컬 컬렉션·RDD에 `toDF()`/`toDS()`를 붙여주는 암묵적 변환, `$\"col\"` StringToColumn 변환을 스코프에 들여온다. 이것이 없으면 `Unable to find encoder for type T` 컴파일 에러가 난다. 2번은 `scala.jdk.CollectionConverters._`의 역할이다."
+  },
+  {
+    "id": "scala-mcq-007",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "case class로 Encoder가 유도되지 않는 사용자 정의 타입을 Dataset에 담기 위해 `Encoders.kryo[T]`를 쓸 때의 트레이드오프로 옳은 것은?",
+    "choices": [
+      "Kryo Encoder는 Catalyst가 내부적으로 필드를 인식해 오히려 최적화가 더 잘 된다",
+      "필드 단위 컬럼 스키마를 잃고 단일 바이너리 컬럼이 되어 컬럼 프루닝·조건 푸시다운을 받을 수 없다",
+      "Kryo Encoder를 쓰면 셔플 시 직렬화가 생략된다",
+      "Kryo Encoder는 case class보다 항상 스키마 진화에 안전하다"
+    ],
+    "answer_index": 1,
+    "explanation": "Kryo Encoder는 객체 전체를 하나의 binary 컬럼으로 직렬화한다. 따라서 Catalyst는 내부 필드를 알 수 없고 컬럼 프루닝, 조건 푸시다운, 컬럼 기반 연산이 불가능해진다. 또한 필드 추가·삭제 시 역직렬화가 깨질 수 있어 스키마 진화에도 취약하다. 가능하면 case class(Product) 기반 Encoder를 쓰고, Kryo는 최후 수단으로 제한하는 것이 원칙이다."
+  },
+  {
+    "id": "scala-mcq-008",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "분산 컬렉션에 대한 집계에서 `reduce`에 넘기는 이항 연산이 반드시 만족해야 하는 성질과 그 이유로 옳은 것은?",
+    "choices": [
+      "교환·결합 법칙 — 파티션별 부분 집계 순서와 병합 순서가 비결정적이기 때문",
+      "멱등성 — 동일 입력을 두 번 처리해도 결과가 같아야 하기 때문",
+      "단조성 — 결과값이 항상 증가해야 하기 때문",
+      "역함수 존재 — 집계를 되돌릴 수 있어야 하기 때문"
+    ],
+    "answer_index": 0,
+    "explanation": "분산 reduce는 각 파티션에서 부분 결과를 만든 뒤 임의의 순서로 병합한다. 따라서 연산이 결합/교환 법칙을 만족하지 않으면(예: 뺄셈, 리스트 앞쪽 append) 실행마다 결과가 달라진다. 반면 단일 스레드 컬렉션의 `foldLeft`는 왼쪽에서 오른쪽 순서가 보장되지만, 그래서 분산 환경에서는 병렬화가 되지 않는다. 순서 의존 로직이 필요하면 aggregate의 seqOp/combOp를 분리해 명시적으로 설계해야 한다."
+  },
+  {
+    "id": "scala-mcq-009",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "레코드 파싱 파이프라인에서 `Try`, `Either`, `Option`의 선택 기준으로 가장 적절한 것은?",
+    "choices": [
+      "Try는 실패 원인을 담지 못하므로 로깅이 필요할 때 Option을 쓴다",
+      "Either는 성공 값을 Left에 담으므로 파이프라인 체이닝에 부적합하다",
+      "예외를 던질 수 있는 코드는 Try, 도메인 에러 사유를 구분해 전달해야 하면 Either, 사유가 필요 없는 단순 부재는 Option을 쓴다",
+      "세 타입 모두 flatMap을 지원하지 않아 for-comprehension으로 조합할 수 없다"
+    ],
+    "answer_index": 2,
+    "explanation": "Try는 예외를 Failure(throwable)로 포획해 던지는 코드를 감쌀 때, Either[Error, A]는 도메인 정의 에러 타입을 Left에 담아 사유별 분기(예: 스키마 불일치 vs 값 범위 초과)를 할 때, Option은 사유가 무의미한 단순 부재에 쓴다. 세 타입 모두 map/flatMap을 지원해 for-comprehension으로 파싱→검증→변환 파이프라인을 조합할 수 있고, Either는 관례상 Right가 성공이다."
+  },
+  {
+    "id": "scala-mcq-010",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "동일한 필터 조건을 DataFrame API(`df.filter($\"age\" > 30)`)로 표현할 때보다 Dataset의 타입 있는 람다(`ds.filter(_.age > 30)`)로 표현할 때 성능이 떨어질 수 있는 핵심 이유는?",
+    "choices": [
+      "타입 있는 람다는 항상 단일 파티션에서 실행되기 때문",
+      "Dataset API는 항상 RDD로 강등되어 셔플이 두 배로 발생하기 때문",
+      "타입 있는 람다는 Tungsten의 코드 생성을 무한 반복시켜 컴파일 시간이 늘어나기 때문",
+      "람다는 Catalyst가 내부를 들여다볼 수 없는 블랙박스라 조건 푸시다운·컬럼 프루닝이 막히고, 매 레코드마다 내부 표현↔JVM 객체 역직렬화 비용이 든다"
+    ],
+    "answer_index": 3,
+    "explanation": "Column 식으로 표현된 조건은 Catalyst가 논리 계획에서 인식해 데이터 소스까지 푸시다운하고 필요한 컬럼만 읽게 만든다. 반면 Scala 람다는 옵티마이저에게 불투명한 코드이므로 푸시다운·프루닝이 불가능하고, 조건 평가를 위해 InternalRow를 case class 객체로 역직렬화(그리고 결과를 다시 직렬화)하는 비용이 레코드마다 발생한다. 그래서 성능이 중요한 경로에서는 타입 안전성을 일부 포기하고 Column 표현식을 쓰는 절충을 택하는 경우가 많다."
+  },
+  {
+    "id": "scala-sub-001",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "Spark 파이프라인의 데이터 모델을 case class로 정의할 때의 장점과, 실무에서 마주치는 한계(스키마 진화, nullable 처리 등)를 설명하라.",
+    "model_answer": "장점: (1) case class는 scala.Product를 구현하므로 컴파일 타임에 Product 기반 Encoder가 유도되어 Dataset[T]로 타입 안전한 변환·컴파일 시점 컬럼명 검증이 가능하다. (2) 불변(val) 필드와 자동 생성된 equals/hashCode/copy 덕분에 값 기반 비교와 부분 수정이 쉽고 셔플 시 안전하다. (3) 패턴 매칭과 결합해 이벤트 타입 분기를 명확히 표현할 수 있다. 한계: (1) 스키마 진화 시 필드를 추가하면 기존 데이터를 읽을 때 컬럼 부재로 AnalysisException이 발생할 수 있어 Option 필드 + 기본값 전략이 필요하다. (2) 원본 컬럼의 nullable 여부와 Scala 타입이 어긋나면(예: nullable 컬럼을 Int로 선언) null이 0으로 잘못 매핑되거나 NPE가 난다 — nullable 컬럼은 Option으로 선언해야 한다. (3) 필드 이름이 소스 컬럼명과 정확히 일치해야 하며, 이름이 다르면 as/withColumnRenamed로 맞춰야 한다. (4) 타입 있는 API에서 람다를 남용하면 Catalyst 최적화를 잃는다. 실무에서는 저장 포맷 스키마(Avro/Parquet/Iceberg)를 원천으로 두고 case class를 얇은 뷰로 유지하며, 스키마 변경은 옵셔널 필드 추가 방식(하위 호환)으로 관리한다. 이는 타입 안전성을 보장한다.",
+    "keywords": [
+      "Encoder",
+      "Product",
+      "Option nullable",
+      "스키마 진화",
+      "타입 안전성"
+    ],
+    "explanation": "case class의 이점은 타입 안전성과 Encoder 자동 유도이지만, 저장소 스키마와 코드 스키마가 이원화되는 순간 진화 전략이 필요해진다. 면접에서는 장점만이 아니라 nullable 미스매치 같은 실패 경험을 함께 말하는 것이 변별점이다."
+  },
+  {
+    "id": "scala-sub-002",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "Scala의 implicit(암묵적 파라미터/변환, Scala 3의 given/using)이 데이터 파이프라인 코드에서 어떤 문제를 해결하는지, 그리고 남용 시 어떤 위험이 있는지 설명하라.",
+    "model_answer": "해결하는 문제: (1) 타입 클래스 패턴으로 타입별 동작(직렬화, 스키마 유도, 코덱)을 상속 없이 주입할 수 있다 — Spark의 Encoder가 대표 사례로, `import spark.implicits._`가 기본 타입과 Product 타입 Encoder를 암묵 스코프에 넣어 `toDS()`를 가능하게 한다. (2) SparkSession, ExecutionContext, 설정 객체처럼 호출 체인 전반에 필요한 컨텍스트를 매 함수 시그니처에 반복 명시하지 않고 implicit 파라미터로 전달할 수 있다. (3) 확장 메서드(implicit class)로 DataFrame에 도메인 전용 연산을 붙여 파이프라인 DSL을 만들 수 있다. 위험: (1) 호출부에 아무 코드도 보이지 않으므로 실제로 어떤 인스턴스가 주입됐는지 추적하기 어렵고, 코드 리뷰·디버깅 비용이 커진다. (2) 암묵적 변환이 예기치 않게 적용돼 타입 오류가 조용히 숨겨질 수 있다. (3) 모호한 암묵값이 여러 개면 컴파일 에러 메시지가 난해해지고, 반대로 없으면 `could not find implicit value` 류의 원인 파악이 어려운 오류가 난다. (4) 컴파일 시간이 늘어난다. 실무 원칙: 암묵값은 컴패니언 객체나 명시적 import 지점 한 곳에 모으고, 암묵적 변환(implicit conversion)은 최대한 피하며 암묵적 파라미터와 타입 클래스 위주로 쓴다. Scala 3에서는 given/using으로 의도가 문법상 분리되어 가독성이 개선되었다.",
+    "keywords": [
+      "암묵적 파라미터",
+      "타입 클래스",
+      "spark.implicits._",
+      "given/using",
+      "가독성/추적성"
+    ],
+    "explanation": "implicit은 Spark API가 타입 안전하게 동작하는 기반 기술이면서 동시에 Scala 코드베이스가 어려워지는 대표 원인이다. 이점과 통제 방법을 함께 말할 수 있어야 한다."
+  },
+  {
+    "id": "scala-sub-003",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Scala의 불변 컬렉션과 고차 함수 체이닝(map/filter/groupBy)이 대용량 데이터를 다루는 단일 JVM 코드(예: mapPartitions 내부)에서 성능 문제를 일으킬 수 있는 이유와 완화 방법을 설명하라.",
+    "model_answer": "문제 원인: (1) 불변 컬렉션에 대한 map/filter는 각 단계마다 새로운 중간 컬렉션 전체를 생성한다. `list.map(f).filter(p).map(g)`는 세 번의 전체 순회와 세 개의 중간 컬렉션을 만들어 할당량과 GC 압력을 급격히 키운다. (2) 박싱된 컬렉션(List[Int] 등)은 각 원소가 힙 객체가 되어 primitive 배열 대비 수 배의 메모리를 쓰고 캐시 지역성이 나쁘다. (3) List는 링크드 리스트라 인덱스 접근·크기 계산이 O(n)이고 노드마다 포인터 오버헤드가 있다. (4) groupBy는 전체를 메모리에 적재한 Map을 만들어 파티션이 크면 OOM으로 이어진다. 완화 방법: (1) 파티션 데이터를 Iterator로 받아 Iterator 체이닝으로 처리하면 지연 평가되어 중간 컬렉션 없이 스트리밍된다 — mapPartitions에서 Iterator를 그대로 반환하는 패턴이 핵심이다. (2) 여러 단계를 하나의 순회로 합치거나 `view`를 써서 중간 결과 생성을 지연시킨다. (3) 숫자 대량 처리에는 Array[Int]/Array[Double] 같은 primitive 배열과 specialized 구조를 쓴다. (4) 지역 누적에는 mutable.ArrayBuffer/mutable.HashMap을 함수 내부로 캡슐화해 사용하고, 외부에는 불변 결과만 노출한다. (5) groupBy 대신 사전 정렬 후 순차 그룹핑(sortWithinPartitions + 스트리밍 집계)으로 메모리 상한을 통제한다. 원칙은 '경계에서는 불변, 핫 루프 내부에서는 가변·스트리밍'이다. 이를 오토박싱(auto-boxing) 문제라고도 부른다.",
+    "keywords": [
+      "중간 컬렉션",
+      "Iterator/view 지연 평가",
+      "오토박싱(auto-boxing)",
+      "mapPartitions",
+      "가변 컬렉션 지역 사용"
+    ],
+    "explanation": "함수형 스타일의 가독성과 JVM 상의 할당 비용은 실제로 충돌한다. 어디까지 불변을 유지하고 어디서 스트리밍/가변으로 전환할지 경계를 설명할 수 있는지가 고급 신호다."
+  },
+  {
+    "id": "scala-sub-004",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "여러 외부 소스(REST API, 메타스토어, 오브젝트 스토리지)의 메타데이터를 Scala Future로 병렬 조회하는 드라이버 코드를 작성할 때 주의할 점을 설명하라.",
+    "model_answer": "주의점: (1) ExecutionContext 선택 — `ExecutionContext.global`은 CPU 코어 수 기반 ForkJoinPool이므로 블로킹 I/O를 태우면 워커가 모두 점유되어 다른 Future가 굶는다. 블로킹 호출은 전용 스레드 풀(예: `Executors.newFixedThreadPool`로 만든 ExecutionContext)에 분리하거나 `blocking { }`으로 감싸 풀이 확장되도록 힌트를 준다. (2) Await 남용 금지 — 각 Future마다 Await.result를 호출하면 직렬 실행이 되어 병렬화 효과가 사라진다. `Future.sequence`/`Future.traverse`로 모은 뒤 한 번만 대기해야 한다. (3) 동시성 상한 — 수천 개 Future를 한 번에 띄우면 대상 API에 스로틀링·429를 유발한다. 배치를 나눠 grouped(N) 단위로 순차 실행하거나 세마포어로 상한을 둔다. (4) 타임아웃과 실패 격리 — Future.sequence는 하나만 실패해도 전체가 실패하므로, 부분 실패를 허용하려면 각 Future를 `.map(Success(_)).recover { case e => Failure(e) }` 형태로 감싸 Try로 수집한다. 타임아웃은 클라이언트 레벨에서 반드시 설정한다. (5) 재시도와 백오프 — 일시적 5xx/타임아웃에는 지수 백오프 재시도를 적용하되 멱등 요청에만 적용한다. (6) Spark 맥락 주의 — Future 내부에서 드라이버의 SparkSession으로 액션을 호출하면 동시 잡 제출이 되어 스케줄러 풀 설정에 따라 예상과 다르게 직렬화되거나 자원 경합이 생긴다. 메타데이터 조회 같은 순수 I/O에 한정하는 것이 안전하다.",
+    "keywords": [
+      "ExecutionContext",
+      "blocking",
+      "Future.sequence/traverse",
+      "동시성 상한",
+      "부분 실패 격리"
+    ],
+    "explanation": "Future는 쉬워 보이지만 스레드 풀 고갈과 실패 전파 규칙에서 사고가 난다. 특히 blocking I/O를 global EC에 태우는 실수는 실제 장애로 자주 이어진다."
+  },
+  {
+    "id": "scala-sub-005",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Scala로 작성한 Spark 잡을 배포할 때 발생하는 바이너리 호환성·의존성 충돌 문제와 그 해결 전략을 설명하라.",
+    "model_answer": "문제: (1) Scala 바이너리 호환성 — Scala 2.12와 2.13은 바이너리 호환되지 않아 클러스터의 Spark가 빌드된 Scala 버전과 잡의 Scala 버전이 다르면 `NoSuchMethodError`, `AbstractMethodError`, `ClassNotFoundException`이 런타임에 터진다. 라이브러리 아티팩트 이름의 접미사(`_2.12`, `_2.13`)를 반드시 클러스터 버전에 맞춰야 하며, sbt의 `%%` 연산자와 crossScalaVersions로 관리한다. (2) 의존성 충돌(다이아몬드) — 애플리케이션이 쓰는 Jackson, Guava, Netty, protobuf 등이 Spark 런타임이 제공하는 버전과 달라 클래스로더에서 먼저 로드된 쪽이 이기며 메서드 시그니처 불일치 오류가 난다. 해결 전략: (1) Spark/Hadoop 관련 의존성은 `provided` 스코프로 선언해 fat jar에 포함시키지 않는다. (2) 남는 충돌은 sbt-assembly/maven-shade로 셰이딩(패키지 리로케이션)해 우리 잡 전용 네임스페이스로 옮긴다. (3) `sbt dependencyTree`/`mvn dependency:tree`로 전이 의존성을 확인하고 불필요한 것은 exclude한다. (4) assembly의 merge 전략(META-INF 서명 파일 제거, services 파일 concat)을 명시한다. (5) 클러스터별로 spark-submit 시 클래스패스 우선순위 옵션(userClassPathFirst 계열)을 쓸 수 있으나 부작용이 크므로 셰이딩이 더 안전하다. (6) CI에서 클러스터와 동일한 Spark·Scala·JDK 버전으로 통합 테스트를 돌려 배포 전에 잡아낸다. 이를 셰이딩(shading)이라 하며, 의존성 트리를 확인해야 한다.",
+    "keywords": [
+      "Scala 2.12/2.13 바이너리 호환성",
+      "provided 스코프",
+      "셰이딩(shading)",
+      "의존성 트리",
+      "fat jar merge 전략"
+    ],
+    "explanation": "언어 자체는 맞게 썼는데 배포에서 터지는 대표 사례다. 원인을 클래스로더·아티팩트 접미사 수준에서 설명할 수 있으면 실제 운영 경험이 있다는 신호가 된다."
+  },
+  {
+    "id": "scala-mcq-011",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "재귀 함수에 `@tailrec` 애너테이션을 붙이는 효과로 옳은 것은?",
+    "choices": [
+      "꼬리 호출 형태가 아니면 컴파일 에러를 내어, 루프로 최적화되지 않는 재귀를 컴파일 단계에서 걸러낸다",
+      "어떤 재귀 함수든 컴파일러가 자동으로 꼬리 재귀 형태로 변환해 준다",
+      "재귀 깊이 제한을 JVM 기본값보다 크게 늘려 준다",
+      "재귀 호출 결과를 자동으로 메모이제이션해 중복 계산을 제거한다"
+    ],
+    "answer_index": 0,
+    "explanation": "`@tailrec`은 최적화를 수행하는 지시자가 아니라 '꼬리 호출 최적화가 실제로 적용되는지' 검증하는 애너테이션이다. 마지막 연산이 자기 자신 호출이 아니면(예: `n * fact(n-1)`처럼 호출 뒤에 연산이 남으면) 컴파일이 실패한다. 스칼라 컴파일러는 조건이 맞으면 재귀를 while 루프로 변환해 스택 프레임을 재사용하므로, 수백만 건 레코드를 재귀로 순회하는 코드에서 StackOverflowError를 방지할 수 있다. 스택 크기 조정은 JVM의 -Xss 옵션 영역이고, 메모이제이션은 별도 구현 사항이다."
+  },
+  {
+    "id": "scala-mcq-012",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "파이프라인 공통 기능(로깅, 설정 로딩, 검증 규칙)을 여러 잡에 재사용하려 할 때 abstract class 대신 trait을 선택하는 주된 근거는?",
+    "choices": [
+      "trait만 구현체가 있는 메서드(concrete method)를 가질 수 있다",
+      "클래스는 하나만 상속할 수 있지만 trait은 여러 개를 믹스인할 수 있어 직교적인 기능을 조합할 수 있다",
+      "trait은 인스턴스화 비용이 없어 런타임 메모리를 쓰지 않는다",
+      "trait은 상태(field)를 가질 수 없어 항상 스레드 안전하다"
+    ],
+    "answer_index": 1,
+    "explanation": "핵심 차이는 다중 믹스인 가능 여부다. `class MyJob extends SparkJob with Logging with ConfigSupport with Validation` 처럼 직교적인 관심사를 겹쳐 쌓을 수 있다. 반대로 생성자 파라미터가 필요하거나(Scala 2 trait은 생성자 인자를 받지 못함), 하나의 명확한 기반 타입 계층을 강제하고 싶으면 abstract class가 낫다. trait도 구현 메서드와 필드를 가질 수 있으며(1·4번 오답), 믹스인이 늘면 super 호출이 선형화(linearization) 순서를 따르므로 어떤 구현이 호출되는지 헷갈리는 것이 실무의 대표 함정이다."
+  },
+  {
+    "id": "scala-mcq-013",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "이벤트 스트림에서 특정 타입만 골라 변환할 때 `events.map { case Click(u) => u }` 대신 `events.collect { case Click(u) => u }`를 쓰는 이유는?",
+    "choices": [
+      "map은 원본 컬렉션을 변경하지만 collect는 새 컬렉션을 만들기 때문",
+      "collect가 내부적으로 병렬 처리되어 map보다 빠르기 때문",
+      "collect는 부분 함수를 받아 정의되지 않은 입력을 건너뛰지만, map은 매칭 실패 시 MatchError를 던지기 때문",
+      "collect는 결과를 드라이버로 모으는 액션이므로 지연 평가를 끊어 주기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "`{ case ... }` 블록은 PartialFunction으로 해석된다. `collect`는 `isDefinedAt`으로 적용 가능 여부를 먼저 확인해 해당하지 않는 원소를 조용히 제외하므로 '필터 + 변환'을 한 번에 표현한다. 반면 `map`은 모든 원소에 적용하려 하므로 매칭되지 않는 이벤트에서 `scala.MatchError`가 터진다. 참고로 Spark의 `RDD.collect()`는 이름만 같을 뿐 드라이버로 데이터를 모으는 액션으로 전혀 다른 API이며(4번 혼동 유도), 이 둘을 구분하는 것도 실무 포인트다."
+  },
+  {
+    "id": "scala-mcq-014",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "세 개의 외부 소스를 동시에 조회하려고 for-comprehension으로 `for { a <- fetchA(); b <- fetchB(); c <- fetchC() } yield (a,b,c)` 를 작성했다. 실제 동작은?",
+    "choices": [
+      "세 Future가 동시에 시작되어 가장 느린 하나의 시간만큼 걸린다",
+      "세 Future 중 하나라도 실패하면 나머지 결과로 자동 대체된다",
+      "컴파일 에러가 발생하며 Future에는 for-comprehension을 쓸 수 없다",
+      "for가 flatMap 체인으로 풀리므로 앞 Future가 완료된 뒤에야 다음이 생성되어 사실상 순차 실행된다"
+    ],
+    "answer_index": 3,
+    "explanation": "for-comprehension은 `fetchA().flatMap(a => fetchB().flatMap(b => fetchC().map(c => ...)))`로 디슈가링된다. Future는 생성되는 순간 실행이 시작되는데, `fetchB()` 호출 자체가 a를 받은 뒤에야 일어나므로 총 소요 시간이 세 지연의 합이 된다. 진짜 병렬로 돌리려면 for 바깥에서 `val fa = fetchA(); val fb = fetchB(); val fc = fetchC()`로 먼저 시작시킨 뒤 `for { a <- fa; b <- fb; c <- fc }`로 조합하거나, `Future.sequence`/`zip`을 쓴다. 겉보기에 정상 동작해 성능만 조용히 나빠지므로 실무에서 놓치기 쉬운 함정이다."
+  },
+  {
+    "id": "scala-mcq-015",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "`val target = \"CLICK\"` 을 둔 뒤 `evt.name match { case target => handleClick(); case _ => skip() }` 를 실행했더니 모든 이벤트가 handleClick으로 갔다. 원인은?",
+    "choices": [
+      "소문자로 시작하는 식별자는 값 비교가 아니라 새 변수 바인딩으로 해석되어 모든 입력을 포착하기 때문",
+      "match는 문자열 비교 시 항상 첫 번째 case를 선택하기 때문",
+      "String은 참조 타입이라 match에서 equals가 아닌 == 비교가 되기 때문",
+      "val로 선언한 변수는 패턴 매칭 스코프에 보이지 않아 무시되기 때문"
+    ],
+    "answer_index": 0,
+    "explanation": "Scala 패턴에서 소문자로 시작하는 단순 식별자는 변수 패턴으로 취급되어 어떤 값이든 받아 바인딩한다. 즉 `case target =>`은 '`target`과 같으면'이 아니라 '무엇이든 받아 target이라는 새 이름을 붙임'이다. 해결 방법은 (1) 상수를 대문자로 시작하도록 선언(`val Target = \"CLICK\"`), (2) 백틱으로 감싸기(`` case `target` => ``), (3) `case s if s == target =>`처럼 가드 사용이다. 컴파일러가 뒤 case를 unreachable로 경고하므로 경고를 켜 두면 사전에 잡을 수 있다."
+  },
+  {
+    "id": "scala-mcq-016",
+    "category": "scala",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "`payload match { case l: List[String] => ...; case l: List[Int] => ... }` 형태로 분기했을 때 발생하는 문제는?",
+    "choices": [
+      "List는 불변이라 패턴 매칭 대상이 될 수 없어 컴파일 에러가 난다",
+      "JVM 타입 소거로 런타임에는 두 타입이 모두 List로 보여 첫 번째 case가 항상 매칭되고, 두 번째는 도달 불가능해진다",
+      "런타임에 제네릭 타입이 보존되므로 정상 동작하지만 성능이 느려진다",
+      "두 case 모두 매칭되어 핸들러가 두 번 실행된다"
+    ],
+    "answer_index": 1,
+    "explanation": "JVM 제네릭은 타입 소거(type erasure)로 구현되어 런타임에는 `List[String]`과 `List[Int]`가 구분되지 않는다. 컴파일러도 unchecked 경고를 내며, 실제로는 첫 번째 case가 모든 List를 삼켜 잘못된 핸들러가 실행된다. 대응은 (1) 원소를 실제로 검사(`case l: List[_] if l.forall(_.isInstanceOf[String])`), (2) 소거되지 않는 sealed trait + case class로 타입을 감싸 모델링, (3) `TypeTag`/`ClassTag`를 암묵 파라미터로 전달하는 방법이다. 실무에서는 이 중 sealed ADT로 스키마를 명시하는 방법이 가장 안전하며, Spark Encoder 유도와도 잘 맞는다."
+  },
+  {
+    "id": "scala-sub-006",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "Scala의 val/var와 불변(immutable) 컬렉션 기본 정책이 분산 데이터 처리 코드에서 갖는 의미를 설명하고, 그럼에도 var나 가변 컬렉션이 정당화되는 경우를 예로 들어라.",
+    "model_answer": "의미: (1) `val`은 재할당 불가 참조이고 표준 컬렉션은 기본이 불변이다. 이 조합 덕분에 값이 여러 스레드·여러 태스크에 공유돼도 경합 조건이 생기지 않아 락 없이 안전하게 읽을 수 있다. Spark는 클로저를 executor로 직렬화해 보내 여러 스레드에서 동시에 실행하므로, 공유 상태가 불변이라는 전제가 동시성 버그를 구조적으로 제거한다. (2) 참조 투명성 — 같은 입력이면 같은 출력이 보장되어 태스크 실패 시 재시도해도 결과가 달라지지 않는다. 이는 Spark의 리니지 기반 복구가 성립하는 전제이기도 하다. (3) 변환 체인(map/filter/groupBy)이 원본을 훼손하지 않으므로 중간 결과를 재사용·캐시하기 쉽고, 코드 추론이 지역적으로 가능해진다. (4) `val`은 컴파일러가 재할당을 막아 주므로 '어디선가 값이 바뀌었나'를 의심할 필요가 없다. 주의할 점: `val`이 보장하는 것은 참조의 불변이지 대상 객체의 불변이 아니다. `val buf = mutable.ArrayBuffer[Int]()`는 여전히 내용이 바뀌므로, 불변성은 타입 선택으로 확보해야 한다. var/가변 컬렉션이 정당한 경우: (1) 핫 루프 내부의 지역 누적 — mapPartitions 안에서 수백만 건을 집계할 때 불변 Map을 매번 새로 만들면 할당·GC 비용이 폭증하므로 `mutable.HashMap`을 함수 내부에 캡슐화하고 결과만 불변으로 반환한다. (2) 프리미티브 배열 기반 대량 수치 연산 — `Array[Double]`을 제자리 갱신하는 편이 메모리·캐시 지역성에서 압도적으로 유리하다. (3) 빌더 패턴 — StringBuilder, ArrayBuffer로 조립한 뒤 `.toList`/`.result()`로 불변화. (4) 커스텀 Aggregator/UDAF의 버퍼처럼 프레임워크가 가변 버퍼를 요구하는 경우. 원칙은 '공개 경계(API 시그니처, 클래스 필드, 태스크 간 공유 값)에서는 불변, 스코프가 닫힌 지역 성능 구간에서만 가변'이다. 절대 하지 말아야 할 것은 드라이버의 var를 클로저에서 갱신해 결과를 모으려는 시도로, 각 executor가 복사본을 수정할 뿐 드라이버 값은 바뀌지 않는다 — 이 목적에는 Accumulator를 써야 한다.",
+    "keywords": [
+      "val 참조 불변",
+      "불변 컬렉션/스레드 안전",
+      "참조 투명성과 태스크 재시도",
+      "지역 가변 버퍼",
+      "드라이버 var 갱신 불가/Accumulator"
+    ],
+    "explanation": "'불변이 좋다'는 원론이 아니라, 태스크 재시도·클로저 직렬화라는 Spark의 실행 모델과 연결해 설명하는지가 변별점이다. 드라이버 var를 클로저에서 증가시키는 실수를 언급하면 실전 경험 신호가 된다."
+  },
+  {
+    "id": "scala-sub-007",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "같은 Spark 파이프라인을 Scala로 구현할지 Python(PySpark)으로 구현할지 결정해야 한다. 언어 자체의 특성을 근거로 판단 기준을 설명하라.",
+    "model_answer": "Scala가 유리한 축: (1) 실행 구조 — Spark는 JVM 위에서 동작하므로 Scala 코드는 executor JVM에서 그대로 실행된다. 별도 Python 워커 프로세스와의 직렬화 왕복이 없어 사용자 정의 로직이 많을수록 격차가 커진다. (2) 정적 타입 — 컴파일 시점에 스키마 불일치, 컬럼명 오타, 널 처리 누락을 잡을 수 있다. 수시간짜리 배치가 마지막 단계에서 AttributeError로 죽는 상황을 줄인다. Dataset[T]로 도메인 타입을 유지하는 것은 Scala에서만 온전히 가능하다(PySpark DataFrame에는 타입 있는 Dataset API가 없다). (3) 함수형 추상화 — 타입 클래스, sealed ADT, 고차 함수로 재사용 가능한 프레임워크·DSL을 만들기 좋아 장기 운영되는 공용 라이브러리에 적합하다. (4) 저수준 접근 — 커스텀 데이터 소스, Catalyst 확장, 커스텀 Aggregator/UDAF, Kafka Streams 등 JVM 생태계와의 통합이 자연스럽다. Python이 유리한 축: (1) 개발 속도와 인력 풀 — 문법이 단순하고 데이터 조직 전반이 이미 사용 중이라 협업·인수인계 비용이 낮다. (2) 생태계 — pandas, scikit-learn, 통계·ML 라이브러리와 노트북 기반 탐색이 필요한 워크로드는 Python이 사실상 유일한 선택이다. (3) 빌드·배포 단순성 — 컴파일과 fat jar 조립, Scala 바이너리 호환성(2.12/2.13) 관리 부담이 없다. (4) 성능 격차의 축소 — 로직을 DataFrame API와 내장 함수로만 표현하면 실제 연산은 Catalyst가 생성한 JVM 코드로 수행되므로 두 언어의 성능은 거의 같다. 격차는 UDF·RDD 같은 사용자 코드 실행 경로에서만 벌어지고, 그마저도 pandas/Arrow UDF로 상당 부분 줄일 수 있다. 판단 기준: 사용자 정의 로직 비중이 높고, 여러 팀이 오래 쓸 공용 프레임워크이며, 지연 시간 SLA가 빡빡하고, 커스텀 커넥터·상태 저장 스트리밍이 필요하면 Scala. 표준 변환·집계 위주이고, ML/분석과 연계되며, 빠른 개발과 넓은 유지보수 인력이 중요하면 PySpark. 실무에서는 코어 엔진·공통 라이브러리는 Scala로, 그 위의 개별 잡과 분석은 PySpark로 나누는 하이브리드가 흔하다. 다만 한 조직이 두 언어 스택을 모두 운영하는 비용(빌드 체계, 테스트, 온콜 역량)이 성능 이득보다 큰 경우도 많으므로, 팀 역량이 실제로 결정적 변수인 경우가 적지 않다.",
+    "keywords": [
+      "JVM 네이티브 vs Python 워커 직렬화",
+      "정적 타입/Dataset[T]",
+      "내장 함수 사용 시 성능 동등",
+      "생태계·개발 속도",
+      "하이브리드 분업과 운영 비용"
+    ],
+    "explanation": "'Scala가 빠르다'로 끝나면 감점이다. 성능 격차가 UDF/RDD 경로에 국한된다는 점, Dataset 타입 API가 Scala 전용이라는 점, 그리고 팀 역량과 운영 비용까지 판단 변수에 넣는지가 변별점이다."
+  },
+  {
+    "id": "scala-sub-008",
+    "category": "scala",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "Scala의 `Option` 타입이 무엇인지 설명하고, 외부 소스에서 읽은 데이터를 다루는 파이프라인에서 null 대신 Option을 쓰면 무엇이 좋아지는지 설명하라.",
+    "model_answer": "정의: `Option[T]`는 '값이 있을 수도, 없을 수도 있음'을 타입으로 표현하는 컨테이너다. 구현체는 값이 있는 `Some(v)`와 값이 없는 `None` 두 가지뿐이며, 둘 다 sealed trait Option의 하위 타입이라 컴파일러가 두 경우를 모두 알 수 있다. null 대신 Option을 쓸 때의 이점: (1) 부재 가능성이 시그니처에 드러난다. `def findUser(id: String): Option[User]`는 결과가 없을 수 있음을 호출자에게 타입으로 알린다. 반대로 `User`를 반환하면서 조용히 null을 주는 API는 호출자가 방어 코드를 빠뜨리기 쉽고, 그 결과는 한참 뒤 런타임 NullPointerException으로 드러난다. (2) 처리 누락이 컴파일 단계로 앞당겨진다. Option 값은 곧바로 쓸 수 없고 map/flatMap으로 감싼 채 변환하거나, `getOrElse`로 기본값을 주거나, 패턴 매칭(`case Some(v) => ... case None => ...`)으로 두 경우를 모두 다뤄야 한다. 따라서 '없을 때 무엇을 할지'를 반드시 한 번은 생각하게 된다. (3) 조합이 쉽다. 여러 선택적 값을 for-comprehension으로 엮으면 하나라도 None이면 전체가 None이 되므로, 단계마다 null 검사를 중첩할 필요가 없다. 대안 소스가 있으면 `orElse`, 컬렉션에서는 `flatten`이나 `collect`로 None을 한 번에 걸러낸다. 데이터 파이프라인 맥락: 외부 소스(JSON, CSV, DB, Kafka 메시지)의 선택적 필드는 case class에서 `Option[String]`처럼 선언해야 한다. nullable 컬럼을 `String`이나 `Int`로 선언하면 Spark가 Dataset으로 변환할 때 null이 잘못 매핑되거나 역직렬화 시점에 NullPointerException이 발생한다. 주의점: (1) `option.get`은 None일 때 예외를 던져 사실상 null과 같으므로 쓰지 않는 것이 원칙이다. (2) Option이 중첩되면(`Option[Option[T]]`) flatten이 필요하다. (3) `Some` 래퍼 객체가 추가로 할당되므로 수억 건을 도는 핫 루프에서는 비용을 감안해야 한다. (4) 실패한 '이유'를 전달해야 한다면 Option이 아니라 Either나 Try가 맞는 선택이다.",
+    "keywords": [
+      "Option",
+      "Some/None",
+      "NullPointerException",
+      "패턴 매칭",
+      "getOrElse"
+    ],
+    "explanation": "Option은 Scala 입문 개념이지만, '널 안전' 구호로 끝내지 않고 타입에 부재가 드러나는 것의 실효(컴파일 시점 처리 강제)와 Spark의 nullable 컬럼 매핑까지 연결하는지가 변별점이다. `.get` 남용이 Option의 이점을 무효화한다는 점을 아는지도 함께 본다."
+  }
+]

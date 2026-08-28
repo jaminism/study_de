@@ -1,0 +1,248 @@
+[
+  {
+    "id": "java-mcq-001",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "Java에서 `List<Record> batch = new ArrayList<>();`를 메서드 안에서 선언했을 때 메모리 배치로 옳은 것은?",
+    "choices": [
+      "참조 변수 batch는 스택 프레임에, ArrayList 객체와 담긴 Record 객체들은 힙에 저장된다",
+      "batch와 ArrayList 객체 모두 스택에 저장되어 메서드 종료 시 즉시 해제된다",
+      "지역 변수이므로 ArrayList는 메서드 영역(Metaspace)에 저장된다",
+      "컬렉션은 항상 off-heap 영역에 저장되어 GC 대상이 아니다"
+    ],
+    "answer_index": 0,
+    "explanation": "지역 변수(참조)는 스레드별 스택 프레임에 놓이고, `new`로 만든 객체 실체는 모두 힙에 할당된다. 메서드가 끝나면 스택 프레임은 사라지지만 힙의 객체는 도달 불가능해진 뒤 GC가 회수한다. Metaspace는 클래스 메타데이터를 담는 영역이며, off-heap은 DirectByteBuffer 등 명시적으로 네이티브 메모리를 쓸 때만 해당한다."
+  },
+  {
+    "id": "java-mcq-002",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "수백만 줄의 로그를 파싱하며 루프 안에서 `result = result + token;`으로 문자열을 이어붙였더니 극단적으로 느려졌다. 원인으로 옳은 것은?",
+    "choices": [
+      "String이 Metaspace에 저장되어 매번 클래스 로딩이 일어나기 때문",
+      "String 연결이 내부적으로 동기화되어 락 경합이 발생하기 때문",
+      "String이 불변이라 매 반복마다 새 String 객체와 문자 배열 복사가 발생해 O(n²) 할당·복사가 일어나기 때문",
+      "String 연결이 자동으로 UTF-16을 UTF-8로 변환하기 때문"
+    ],
+    "answer_index": 2,
+    "explanation": "String은 불변이므로 `+`는 매번 새 객체를 만들고 기존 내용을 복사한다. 루프에서 반복하면 총 복사량이 제곱에 비례해 늘고, 버려진 중간 객체가 young 영역을 채워 GC 빈도를 높인다. 루프 내 문자열 조립에는 StringBuilder(단일 스레드) 또는 스트리밍 방식 출력을 써야 한다. 컴파일러는 단일 표현식의 `+`는 StringBuilder로 최적화하지만 루프 누적은 최적화해 주지 않는다."
+  },
+  {
+    "id": "java-mcq-003",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "파일 스트림·DB 커넥션을 다루는 배치 코드에서 try-with-resources를 사용하는 이유로 가장 정확한 것은?",
+    "choices": [
+      "GC가 즉시 실행되어 힙 메모리가 바로 회수되기 때문",
+      "AutoCloseable 자원의 close()가 정상·예외 경로 모두에서 보장 호출되어 파일 디스크립터·커넥션 누수를 막기 때문",
+      "finalize() 메서드가 자동으로 등록되어 자원이 확실히 해제되기 때문",
+      "try 블록 안의 예외가 자동으로 무시되어 배치가 중단되지 않기 때문"
+    ],
+    "answer_index": 1,
+    "explanation": "try-with-resources는 선언된 AutoCloseable 자원을 블록 종료 시(예외 발생 포함) 역순으로 close 한다. 힙 메모리는 GC가 관리하지만 파일 디스크립터·소켓·커넥션 같은 네이티브 자원은 GC가 보장해 주지 않으므로 명시적 해제가 필수다. finalize는 실행 시점이 보장되지 않아 오래전에 deprecated 되었고, 예외는 무시되지 않고 그대로 전파된다(close 중 발생한 예외는 suppressed로 첨부)."
+  },
+  {
+    "id": "java-mcq-004",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "basic",
+    "question": "커스텀 키 클래스를 `HashMap`의 키로 써서 스트림 집계를 했는데 같은 값의 키가 서로 다른 엔트리로 잡혔다. 가장 유력한 원인은?",
+    "choices": [
+      "키 클래스가 Comparable을 구현하지 않았다",
+      "키 클래스가 Serializable을 구현하지 않았다",
+      "HashMap의 초기 용량을 지정하지 않았다",
+      "equals()만 재정의하고 hashCode()를 재정의하지 않아 해시 버킷이 달라졌다"
+    ],
+    "answer_index": 3,
+    "explanation": "HashMap은 먼저 hashCode()로 버킷을 찾고 그 안에서 equals()로 비교한다. hashCode()를 재정의하지 않으면 Object의 기본 구현이 인스턴스별로 다른 값을 주어 논리적으로 같은 키가 다른 버킷으로 흩어진다. equals와 hashCode는 항상 함께 재정의해야 하며, Java 16+ 의 record는 이를 자동 생성해 준다. 초기 용량은 리해시 성능에만 영향을 준다."
+  },
+  {
+    "id": "java-mcq-005",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "고정 크기 스레드 풀(`Executors.newFixedThreadPool`) 기반 인제스천 워커에서 태스크 제출 속도가 처리 속도를 지속적으로 초과할 때 발생하는 일은?",
+    "choices": [
+      "풀이 자동으로 스레드를 늘려 처리량을 맞춘다",
+      "무제한 LinkedBlockingQueue에 태스크가 계속 쌓여 힙이 고갈되고 결국 OutOfMemoryError가 난다",
+      "새 태스크 제출이 즉시 RejectedExecutionException으로 거부된다",
+      "가장 오래된 태스크가 자동으로 폐기되어 큐 크기가 유지된다"
+    ],
+    "answer_index": 1,
+    "explanation": "newFixedThreadPool은 용량 제한이 없는 LinkedBlockingQueue를 사용하므로 스레드 수는 고정된 채 대기 태스크만 무한히 쌓인다. 결과는 지연 증가와 OOM이다. 백프레셔가 필요하면 ThreadPoolExecutor를 직접 생성해 유계 큐(ArrayBlockingQueue)를 주고, 포화 정책을 CallerRunsPolicy(제출자 스로틀링)나 AbortPolicy로 명시해야 한다. 3번·4번은 각각 AbortPolicy, DiscardOldestPolicy를 설정했을 때의 동작이다."
+  },
+  {
+    "id": "java-mcq-006",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "대용량 컬렉션 처리에 `parallelStream()`을 사용할 때 주의할 점으로 옳은 것은?",
+    "choices": [
+      "parallelStream은 요소마다 새 스레드를 생성해 스레드 수가 요소 수와 같아진다",
+      "parallelStream은 항상 순차 스트림보다 빠르므로 무조건 사용하는 것이 좋다",
+      "기본적으로 공용 ForkJoinPool.commonPool을 공유하므로, 블로킹 I/O를 태우면 애플리케이션 전역의 다른 병렬 작업까지 굶는다",
+      "parallelStream은 내부적으로 동기화되므로 공유 가변 상태를 안전하게 수정할 수 있다"
+    ],
+    "answer_index": 2,
+    "explanation": "parallelStream은 별도 지정이 없으면 JVM 전역의 commonPool(기본 병렬도 = 코어 수 - 1)을 쓴다. 여기에 블로킹 I/O나 오래 걸리는 태스크를 넣으면 같은 풀을 쓰는 다른 모든 병렬 작업이 대기한다. 또한 분할·병합 오버헤드 때문에 작은 컬렉션이나 분할이 어려운 소스(LinkedList, IO 기반)에서는 오히려 느리고, 공유 가변 상태 수정은 여전히 데이터 경쟁을 일으킨다(가변 축약은 collect나 reduce로 표현해야 한다). I/O 병렬화에는 전용 ExecutorService나 가상 스레드가 적절하다."
+  },
+  {
+    "id": "java-mcq-007",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "1억 개의 정수 지표를 메모리에 유지해야 할 때 `List<Integer>` 대신 `int[]`를 쓰는 이유로 가장 정확한 것은?",
+    "choices": [
+      "Integer는 값 비교가 불가능해 집계 연산을 할 수 없기 때문",
+      "List는 힙이 아니라 스택에 저장되어 크기 제한이 있기 때문",
+      "int[]는 off-heap에 할당되어 GC 대상이 아니기 때문",
+      "Integer는 객체 헤더와 참조 오버헤드로 원시 int 대비 몇 배의 메모리를 쓰고, 오토박싱으로 생긴 다수의 객체가 GC 압력과 캐시 미스를 유발하기 때문"
+    ],
+    "answer_index": 3,
+    "explanation": "각 Integer는 객체 헤더(보통 12~16바이트)와 값, 그리고 리스트가 보관하는 참조까지 필요해 4바이트짜리 int 대비 4~5배 이상 메모리를 소모한다. 게다가 흩어진 객체는 CPU 캐시 지역성이 나빠 순회 성능도 떨어지고, 대량 박싱은 young 영역을 빠르게 채워 GC를 자주 유발한다(Integer 캐시는 -128~127 범위만 재사용). 대량 수치 데이터에는 원시 배열이나 원시 특화 컬렉션(fastutil, Eclipse Collections), IntStream을 쓴다."
+  },
+  {
+    "id": "java-mcq-008",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "컨슈머 스레드를 종료시키기 위한 `private volatile boolean running = true;` 플래그에서 volatile의 역할로 옳은 것은?",
+    "choices": [
+      "플래그 갱신을 원자적으로 만들어 여러 스레드가 동시에 증감해도 안전하게 한다",
+      "쓰기가 다른 스레드의 읽기에 즉시 보이도록 가시성을 보장하고, 컴파일러·CPU가 해당 읽기를 레지스터에 캐싱하거나 재정렬하지 못하게 한다",
+      "해당 필드에 접근하는 모든 코드 블록에 자동으로 락을 건다",
+      "필드를 힙이 아닌 스레드 로컬 저장소에 배치해 경합을 없앤다"
+    ],
+    "answer_index": 1,
+    "explanation": "volatile은 가시성과 순서(happens-before)를 보장한다. volatile이 없으면 JIT가 루프 조건 읽기를 호이스팅해 종료 플래그 변경을 영원히 못 보는 무한 루프가 생길 수 있다. 다만 volatile은 상호 배제를 제공하지 않아 `count++` 같은 읽기-수정-쓰기 복합 연산은 여전히 경쟁 상태가 된다 — 그 경우에는 AtomicInteger나 synchronized/Lock이 필요하다."
+  },
+  {
+    "id": "java-mcq-009",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "intermediate",
+    "question": "제네릭 타입 소거(type erasure)가 데이터 처리 코드에 미치는 실질적 영향으로 옳은 것은?",
+    "choices": [
+      "런타임에는 List<Event>와 List<String>이 구분되지 않으므로, JSON을 List<Event>로 역직렬화하려면 TypeReference 같은 방식으로 타입 정보를 별도 전달해야 한다",
+      "제네릭 타입은 런타임에 완전히 보존되므로 리플렉션으로 언제나 원소 타입을 얻을 수 있다",
+      "타입 소거 때문에 컴파일 시점 타입 검사도 수행되지 않는다",
+      "타입 소거는 제네릭 컬렉션을 항상 Object[]로 복사해 메모리를 두 배로 쓰게 만든다"
+    ],
+    "answer_index": 0,
+    "explanation": "자바 제네릭은 컴파일 시점에만 검사되고 런타임에는 소거되어 raw 타입으로 취급된다. 그래서 `new T[]` 생성, `instanceof List<Event>` 검사가 불가능하고, Jackson 같은 라이브러리는 `new TypeReference<List<Event>>(){}` 형태의 익명 서브클래스로 시그니처에 남은 타입 정보를 읽어 처리한다(필드·메서드 시그니처의 제네릭 정보는 남으므로 제한적 리플렉션은 가능). 컴파일 타임 검사는 정상 수행되며 추가 복사도 발생하지 않는다."
+  },
+  {
+    "id": "java-mcq-010",
+    "category": "java",
+    "type": "mcq",
+    "difficulty": "advanced",
+    "question": "`ByteBuffer.allocateDirect()`로 만든 off-heap 버퍼를 대량으로 사용하는 수집기에서 힙은 여유로운데 컨테이너가 OOM Kill 되었다. 가장 정확한 설명은?",
+    "choices": [
+      "다이렉트 버퍼의 네이티브 메모리는 힙 밖에 있어 힙 GC 압력을 만들지 않으므로, 작은 참조 객체가 old 영역으로 승격되면 full GC 전까지 네이티브 메모리가 해제되지 않아 RSS가 계속 늘어난다",
+      "다이렉트 버퍼는 힙에 할당되므로 -Xmx만 늘리면 해결된다",
+      "다이렉트 버퍼는 참조가 사라지는 즉시 네이티브 메모리가 해제되므로 다른 원인이다",
+      "다이렉트 버퍼는 GC 대상이 아니어서 JVM 프로세스 메모리에 포함되지 않는다"
+    ],
+    "answer_index": 0,
+    "explanation": "DirectByteBuffer는 힙의 작은 참조 객체 + 힙 밖 네이티브 버퍼의 두 부분 구조다. 네이티브 영역 해제는 참조 객체가 회수될 때 Cleaner를 통해 일어나는데, 그 참조 객체는 작아서 GC 압력을 거의 만들지 않으면서도 old 영역으로 승격될 수 있다. 그러면 full GC가 일어나기 전까지 네이티브 메모리가 붙잡혀 컨테이너 RSS 한도를 넘긴다. 대응은 `-XX:MaxDirectMemorySize`로 상한을 명시해 조기 실패시키고, 버퍼를 풀링해 재사용하며, 컨테이너 메모리 한도를 힙 + 다이렉트 + Metaspace + 스레드 스택 합계로 산정하는 것이다."
+  },
+  {
+    "id": "java-sub-001",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "대량 레코드를 처리하는 Java 배치 애플리케이션에서, GC 옵션을 바꾸지 않고 코드·객체 설계 수준에서 GC 부담을 줄이는 방법을 설명하라.",
+    "model_answer": "핵심은 '할당량(allocation rate)을 줄이고, 객체 수명을 짧게 유지하며, 불필요한 승격(promotion)을 막는 것'이다. (1) 단명 객체 자체는 나쁘지 않다 — 세대별 GC에서 young 영역의 짧은 수명 객체는 회수 비용이 매우 낮다. 문제가 되는 것은 초당 할당량이 과도해 minor GC가 지나치게 잦아지는 경우와, 살아남아 old로 승격되는 객체가 많은 경우다. (2) 루프 내 임시 객체 제거 — 문자열은 StringBuilder로 재사용하고, 포맷터·정규식 Pattern·Jackson ObjectMapper처럼 생성 비용이 큰 객체는 한 번 만들어 재사용한다(스레드 안전성 확인 필요). (3) 오토박싱 회피 — 대량 수치는 int[]/long[]/double[] 또는 IntStream, 원시 특화 컬렉션(fastutil 등)을 쓴다. Integer 박싱은 메모리와 GC 압력을 몇 배로 키운다. (4) 버퍼·객체 재사용 — 레코드 파싱 시 요청마다 새 배열을 만들지 말고 재사용 가능한 버퍼나 mutable holder를 파티션/스레드 단위로 두되, 스레드 안전 경계를 명확히 한다. (5) 중간 컬렉션 줄이기 — 전체를 List로 모은 뒤 변환하는 대신 Iterator/Stream으로 스트리밍하고, 컬렉션 초기 용량을 예상 크기로 지정해 반복적인 배열 확장·복사를 막는다. (6) 대용량 컬렉션의 수명 관리 — 전체 결과를 힙에 모아두는 설계(캐시, 누적 리스트)는 old 영역을 채워 full GC와 OOM을 부른다. 배치 단위로 싱크에 쓰고 참조를 끊는다. (7) 메모리 누수형 참조 제거 — static 컬렉션, 해제되지 않는 리스너, ThreadLocal(스레드 풀에서 스레드가 재사용되므로 remove 필수). (8) 큰 객체 주의 — 매우 큰 배열은 humongous 객체로 별도 취급되어 회수·단편화 특성이 달라진다. 필요하면 청크 단위로 나눈다. (9) 측정 우선 — GC 로그(-Xlog:gc*)와 할당 프로파일러(async-profiler alloc 모드, JFR)로 실제 할당 핫스팟을 찾은 뒤 고친다. 추측으로 객체 풀링을 도입하면 코드만 복잡해지고 효과가 없는 경우가 많다. (참고로 힙 크기·GC 알고리즘 선택이나 실행 엔진 수준의 executor 메모리 설정은 애플리케이션 코드 밖의 별도 튜닝 영역이다.) 결과적으로 할당량 감소로 이어진다.",
+    "keywords": [
+      "할당량 감소",
+      "오토박싱 회피",
+      "객체 재사용/버퍼 풀",
+      "old 승격 방지",
+      "할당 프로파일링(JFR/async-profiler)"
+    ],
+    "explanation": "GC 질문을 받으면 곧바로 GC 알고리즘·힙 옵션으로 가는 답변이 많다. 언어·코드 레벨에서 할당량과 객체 수명을 통제하는 관점을 먼저 제시하고, 측정 기반 접근을 말하는 것이 변별점이다."
+  },
+  {
+    "id": "java-sub-002",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "intermediate",
+    "question": "여러 외부 소스에서 데이터를 동시에 수집하는 Java 워커를 ExecutorService로 구현할 때 고려해야 할 설계 요소를 설명하라.",
+    "model_answer": "(1) 풀 유형과 크기 — CPU 바운드는 코어 수 내외, I/O 바운드는 대기 비율에 따라 그보다 크게 잡는다. `newCachedThreadPool`은 무제한으로 스레드를 만들 수 있어 외부 API 폭주·스레드 폭증 위험이 있고, `newFixedThreadPool`은 무계 큐라 백프레셔가 없다. 실무에서는 ThreadPoolExecutor를 직접 구성해 코어/최대 스레드 수, 유계 큐, 포화 정책을 명시하는 것이 안전하다. (2) 백프레셔 — 유계 ArrayBlockingQueue + CallerRunsPolicy를 쓰면 큐가 차는 순간 제출 스레드가 직접 태스크를 실행하게 되어 자연스럽게 유입 속도가 제어된다. (3) 작업 격리 — 성격이 다른 작업(빠른 메타데이터 조회 vs 느린 대용량 다운로드)을 같은 풀에 섞으면 느린 작업이 풀을 점유해 빠른 작업이 굶는다. 풀을 분리한다. (4) 결과 조합과 예외 — `submit`이 반환한 Future의 예외는 `get()`을 호출해야 드러나므로, 결과를 무시하면 실패가 조용히 사라진다. CompletableFuture로 `thenCompose/thenCombine/exceptionally`를 조합하고 `allOf`로 모으되 개별 실패를 격리해 수집한다. (5) 타임아웃 — 외부 호출에는 클라이언트 레벨 타임아웃을 반드시 설정한다. `Future.get(timeout)`은 호출자만 풀어줄 뿐 작업 자체를 멈추지 않는다는 점에 유의한다. (6) 스레드 이름과 관측성 — ThreadFactory로 의미 있는 스레드 이름을 붙이면 스택 덤프·로그 분석이 쉬워진다. 큐 길이, 활성 스레드, 거부 건수를 지표로 노출한다. (7) 정상 종료 — `shutdown()` 후 `awaitTermination`, 시간 초과 시 `shutdownNow()` + 인터럽트 처리. 워커 코드는 InterruptedException을 삼키지 말고 인터럽트 상태를 복원해 종료 신호가 전파되게 한다. (8) 자원 정리 — 스레드 풀에서 ThreadLocal을 쓰면 스레드가 재사용되므로 반드시 remove 한다. 커넥션 풀·HTTP 클라이언트는 공유하고 종료 시 닫는다. (9) 재시도와 멱등성 — 일시 오류에 지수 백오프 재시도를 적용하되 멱등한 작업에 한정하고, 재시도가 풀을 잠식하지 않도록 별도 스케줄러(ScheduledExecutorService)로 지연 재제출한다.",
+    "keywords": [
+      "ThreadPoolExecutor 유계 큐",
+      "CallerRunsPolicy 백프레셔",
+      "CompletableFuture 예외 처리",
+      "graceful shutdown/인터럽트",
+      "ThreadLocal 정리"
+    ],
+    "explanation": "'스레드 풀 쓰면 됩니다'를 넘어 큐 포화 정책, 실패 가시성(Future.get을 안 하면 예외가 사라짐), 종료 처리까지 다루는지가 실무 신호다."
+  },
+  {
+    "id": "java-sub-003",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "Java 21의 가상 스레드(virtual thread)가 데이터 수집·연동 워크로드에 주는 이점과 한계를 설명하라.",
+    "model_answer": "이점: 가상 스레드는 OS 스레드가 아니라 JVM이 관리하는 경량 스레드로, 블로킹 I/O에서 대기할 때 캐리어(플랫폼) 스레드에서 언마운트되고 스택이 힙에 보관된다. 덕분에 수만~수백만 개를 동시에 띄워도 스레드당 수백 KB~MB의 OS 스택을 소모하지 않는다. 데이터 엔지니어링 맥락에서는 수천 개의 REST/DB/오브젝트 스토리지 호출을 다룰 때, 리액티브 스타일로 코드를 뒤집지 않고도(콜백·Flux 체인 없이) 익숙한 동기 블로킹 코드 그대로 높은 동시성을 얻는 것이 가장 큰 실익이다. 디버깅·스택트레이스·프로파일링이 동기 코드와 동일하게 읽히고, try-with-resources·구조적 동시성(StructuredTaskScope)과 자연스럽게 결합된다. 한계와 주의점: (1) CPU 바운드에는 이득이 없다 — 실제 병렬도는 여전히 코어 수에 묶이며, 무거운 계산은 플랫폼 스레드 풀이 더 적합하다. (2) 피닝(pinning) — synchronized 블록 안에서 블로킹하면(구버전 JDK 21 기준) 캐리어 스레드가 묶여 확장성이 무너진다. 임계 구역은 ReentrantLock으로 바꾸는 것이 권장된다. 네이티브 메서드(JNI) 호출 중에도 언마운트되지 않는다. (3) 풀링하지 말 것 — 가상 스레드는 생성이 저렴하므로 태스크당 하나씩 만든다. 풀에 넣으면 이점을 잃고 ThreadLocal 오염 위험만 남는다. (4) 자원 상한이 사라지지 않는다 — 스레드는 싸졌지만 DB 커넥션·상대 API의 처리 한계는 그대로다. 세마포어나 커넥션 풀로 여전히 동시성 상한을 걸어야 하며, 오히려 무제한 동시 요청으로 하위 시스템을 무너뜨리기 쉬워졌다. (5) ThreadLocal 남용 주의 — 스레드가 수십만 개면 스레드 로컬 데이터도 그만큼 늘어난다. ScopedValue 같은 대안을 고려한다. (6) 생태계 — 일부 라이브러리·프레임워크가 내부에서 스레드 풀이나 synchronized를 쓰고 있어 기대만큼 확장되지 않을 수 있으므로 실측이 필요하다. 따라서 풀링 금지가 원칙이다.",
+    "keywords": [
+      "언마운트/캐리어 스레드",
+      "I/O 바운드 확장성",
+      "pinning(synchronized/JNI)",
+      "풀링 금지",
+      "동시성 상한은 여전히 필요"
+    ],
+    "explanation": "가상 스레드를 '무조건 빠른 스레드'로 이해하는 답변이 흔하다. I/O 바운드 한정 이점, 피닝, 그리고 '스레드는 싸졌지만 하위 시스템 한계는 그대로'라는 통찰을 말할 수 있는지가 핵심이다."
+  },
+  {
+    "id": "java-sub-004",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "생산자-소비자 구조의 Java 데이터 파이프라인을 스레드 안전하게 만들려면 Java 메모리 모델(JMM) 관점에서 무엇을 보장해야 하는지 설명하라.",
+    "model_answer": "JMM은 한 스레드의 쓰기가 다른 스레드에 언제 보이는지를 happens-before 관계로 규정한다. 이 관계가 없으면 컴파일러·CPU의 재정렬과 코어별 캐시 때문에 다른 스레드가 낡은 값을 보거나 부분적으로 초기화된 객체를 볼 수 있다. 보장해야 할 것: (1) 가시성 — 종료 플래그처럼 단순 상태 공유는 volatile로 읽기/쓰기 사이에 happens-before를 만든다. volatile 없이는 무한 루프나 종료 실패가 발생할 수 있다. (2) 원자성 — `count++` 같은 읽기-수정-쓰기 복합 연산은 volatile로 부족하며 AtomicLong/LongAdder(고경합 카운터에 유리) 또는 락이 필요하다. (3) 안전한 발행(safe publication) — 생산자가 만든 객체를 소비자가 온전히 보려면 발행 경로에 happens-before가 있어야 한다. BlockingQueue에 put 하고 take 하는 것, ConcurrentHashMap에 넣고 꺼내는 것, volatile 참조에 대입하는 것, final 필드로 초기화를 마친 불변 객체를 넘기는 것이 모두 안전한 발행 방법이다. 반대로 일반 필드에 그냥 대입해 다른 스레드가 읽게 하면 부분 초기화 상태가 보일 수 있다. (4) 불변성 활용 — 레코드/불변 객체로 데이터를 넘기면 final 필드 안전 초기화 보장 덕에 동기화 없이 안전하게 공유된다. 파이프라인 단계 간 전달 객체는 불변으로 두는 것이 가장 단순하고 안전하다. (5) 구조적 선택 — 직접 wait/notify를 쓰기보다 `BlockingQueue`(유계 큐로 백프레셔까지 확보)나 `LinkedTransferQueue`, 완료 통지에는 CompletableFuture/CountDownLatch를 쓴다. 라이브러리 클래스가 내부에서 필요한 happens-before를 이미 보장한다. (6) 락 사용 시 원칙 — 임계 구역은 최소화하고, 락 순서를 전역적으로 고정해 데드락을 피하며, I/O를 락 안에서 하지 않는다. (7) 검증 — 코드 리뷰만으로는 부족하므로 jcstress 같은 동시성 테스트나 부하 테스트, 그리고 스레드 덤프 분석으로 실제 경합·데드락을 확인한다.",
+    "keywords": [
+      "happens-before",
+      "volatile 가시성 vs 원자성",
+      "안전한 발행(safe publication)",
+      "BlockingQueue 백프레셔",
+      "불변 객체/final 필드"
+    ],
+    "explanation": "동시성 질문의 깊이는 'synchronized 쓰면 됩니다'와 'happens-before로 가시성과 안전한 발행을 설명한다' 사이에서 갈린다. 불변 객체 + BlockingQueue라는 실전 조합까지 제시하면 좋은 답변이다."
+  },
+  {
+    "id": "java-sub-005",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "advanced",
+    "question": "수십 GB 규모의 데이터를 단일 JVM에서 다뤄야 할 때, 힙 안에 모두 올리는 방식의 한계와 off-heap·메모리 매핑 파일 같은 대안의 트레이드오프를 설명하라.",
+    "model_answer": "힙 방식의 한계: (1) 객체 오버헤드 — 각 객체마다 헤더와 정렬 패딩, 컬렉션의 참조 배열까지 더해져 실제 데이터의 수 배 메모리를 쓴다. (2) GC 비용 — 살아있는 대용량 객체 그래프는 마킹 대상이 되어 GC 시간이 늘고, old 영역이 가득 차면 긴 정지나 OOM으로 이어진다. 데이터가 대부분 '오래 살아있는' 성격이면 세대별 GC의 이점을 거의 못 받는다. (3) 힙 크기 확장의 한계 — 힙을 키울수록 GC 대상 그래프가 커져 정지 시간이 함께 늘어나는 트레이드오프가 있다. (4) 압축 oops 경계 — 힙이 약 32GB를 넘으면 압축 포인터가 꺼져 참조 크기가 8바이트가 되어 메모리 사용량이 오히려 급증하는 구간이 있다. 대안 1) off-heap(DirectByteBuffer, Foreign Function & Memory API) — 장점: GC 대상이 아니라 정지 시간에 영향을 주지 않고, 직렬화 없이 네이티브 I/O와 주고받을 수 있으며(제로 카피), 데이터를 컴팩트한 바이너리 레이아웃으로 저장해 오버헤드가 작다. 단점: 수동 수명 관리가 필요해 해제를 잊으면 네이티브 누수가 되고, DirectByteBuffer는 Cleaner 기반이라 회수 시점이 불확실하다. 객체 지향 접근 대신 오프셋 계산·직렬화 코드를 직접 써야 해 복잡도와 버그 위험이 커진다. `-XX:MaxDirectMemorySize` 상한과 컨테이너 메모리 산정(힙 + 다이렉트 + Metaspace + 스택 + 코드 캐시)이 필요하다. Java 21+ 의 FFM API(MemorySegment, Arena)는 스코프 기반 해제로 이 위험을 크게 줄여 준다. 대안 2) 메모리 매핑 파일(MappedByteBuffer) — OS 페이지 캐시를 활용해 파일을 가상 주소 공간에 매핑하므로 물리 메모리보다 큰 데이터를 다룰 수 있고, 프로세스 재시작 후에도 페이지 캐시 덕에 워밍업이 빠르다. 단점: 실제 접근 패턴이 랜덤이면 페이지 폴트로 디스크 I/O가 폭증하고, 매핑 해제 시점 제어가 까다로우며 파일 크기·주소 공간 제약을 받는다. 대안 3) 설계 자체를 바꾸기 — 스트리밍 처리(한 번에 한 배치만 메모리에), 컬럼 지향 포맷과 프루닝으로 읽는 양 자체를 줄이기, 임베디드 KV 스토어(RocksDB)로 상태를 디스크에 위임하기, 그리고 데이터가 지속적으로 커진다면 분산 처리로 이관하기. 판단 기준: 대부분의 경우 off-heap 직접 구현보다 스트리밍·포맷 개선이 비용 대비 효과가 크다. off-heap은 지연 시간 민감도가 높고 데이터 레이아웃이 고정된 특수한 경우(캐시, 인덱스, 네트워크 버퍼)에 한정해 도입하는 것이 합리적이다.",
+    "keywords": [
+      "객체 헤더 오버헤드",
+      "압축 oops 32GB 경계",
+      "DirectByteBuffer/FFM MemorySegment",
+      "MappedByteBuffer 페이지 캐시",
+      "스트리밍 설계 우선"
+    ],
+    "explanation": "off-heap을 만능으로 답하는 것은 위험 신호다. 힙 한계를 정량적 근거(객체 헤더, 압축 oops)로 설명하고, off-heap의 수동 수명 관리 비용과 '먼저 스트리밍·포맷으로 해결한다'는 판단 순서를 제시하는 것이 좋은 답변이다."
+  },
+  {
+    "id": "java-sub-006",
+    "category": "java",
+    "type": "subjective",
+    "difficulty": "basic",
+    "question": "Java의 checked exception과 unchecked exception의 차이를 설명하고, 배치·인제스천 코드에서 예외를 다룰 때 지켜야 할 원칙을 설명하라.",
+    "model_answer": "차이: checked exception은 `Exception`을 상속하되 `RuntimeException` 계열이 아닌 예외로, IOException·SQLException처럼 컴파일러가 `throws` 선언이나 try-catch 처리를 강제한다. unchecked exception은 `RuntimeException`과 그 하위(NullPointerException, IllegalArgumentException, IllegalStateException 등) 및 Error 계열로, 컴파일러가 처리를 강제하지 않는다. 설계 의도상 checked는 '호출자가 합리적으로 복구할 수 있다고 기대되는 상황'(파일이 없음, 커넥션이 끊김)에, unchecked는 '프로그래밍 오류나 계약 위반'(널 인자, 잘못된 상태)에 쓰도록 나뉜다. 즉 구분의 기준은 복구 가능성이다. 다만 실무에서는 checked 예외가 시그니처를 오염시키고 계층마다 재선언을 강요한다는 비판이 있어, 최근 라이브러리들은 대부분 unchecked를 선호한다. 배치·인제스천 코드에서의 원칙: (1) 예외 삼키기 금지 — `catch (Exception e) {}`처럼 비워 두거나 로그 한 줄만 남기고 계속 진행하면, 데이터가 조용히 누락된 채 잡이 '성공'으로 끝난다. 가장 위험한 패턴이다. (2) 잡을 수 있는 것만 잡는다 — 구체적인 예외 타입을 잡고, 처리할 수 없다면 그대로 전파해 잡이 빠르게 실패(fail fast)하게 한다. `Throwable`이나 `Error`는 잡지 않는다. (3) 스택트레이스 보존 — 다시 던질 때는 `throw new PipelineException(\"...\", e)`처럼 원인 예외를 생성자에 넘겨 원인 체인을 남긴다. `e.getMessage()`만 새 예외에 문자열로 옮기면 진짜 발생 지점이 사라져 디버깅이 불가능해진다. 로깅도 `log.error(msg, e)`로 예외 객체 자체를 넘겨야 스택트레이스가 남는다. (4) 컨텍스트 부착 — 예외 메시지에 파일명·오프셋·배치 ID·레코드 키를 포함해 수억 건 중 어느 레코드에서 터졌는지 특정할 수 있게 한다. (5) 레코드 오류와 잡 오류를 구분 — 개별 레코드의 파싱 실패는 데드레터로 격리하고 카운터를 올리되, 실패율이 임계치를 넘으면 잡을 실패시킨다. 설정 오류·인증 실패·스키마 부재는 재시도해도 소용없으므로 즉시 실패시킨다. (6) 자원 정리 — 정리는 catch가 아니라 try-with-resources에 맡긴다. close에서 난 예외는 suppressed로 첨부되어 원래 예외를 가리지 않는다. (7) InterruptedException 특례 — 삼키지 말고 `Thread.currentThread().interrupt()`로 인터럽트 상태를 복원해 종료 신호가 상위로 전파되게 한다. (8) 도메인 예외 계층 — `PipelineException` 아래 `TransientException`(재시도 대상)과 `DataQualityException`(스킵 대상)을 두면, 재시도·스킵·중단 정책을 예외 타입만 보고 결정할 수 있다.",
+    "keywords": [
+      "checked exception",
+      "RuntimeException",
+      "복구 가능성",
+      "예외 삼키기",
+      "스택트레이스 보존"
+    ],
+    "explanation": "checked/unchecked 구분을 문법 암기로 답하면 평범하다. '복구 가능성'이라는 설계 기준과, 배치에서 예외를 삼켜 데이터가 조용히 누락되는 사고, 원인 체인을 잃는 재던지기 안티패턴을 짚는지가 변별점이다."
+  }
+]
